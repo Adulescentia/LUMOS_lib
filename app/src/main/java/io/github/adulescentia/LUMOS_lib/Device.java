@@ -1,8 +1,9 @@
 package io.github.adulescentia.LUMOS_lib;
 
+import org.joml.Vector3f;
+
 public class Device {
-    float[] coordiante; // x,y(평면좌표계), z(0:lower, 1:middle, 2:upper)
-    float[] boundary; //radian
+    Vector3f coordinate;
     String name;
 
 }
