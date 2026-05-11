@@ -45,10 +45,10 @@ dependencies {
 
     //additional
 
-    implementation("com.google.mediapipe:tasks-vision:0.10.0")
-    implementation("org.ejml:ejml-all:0.43")
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.9.0")
-    implementation("org.joml:joml:1.10.5")
+    implementation("com.google.mediapipe:tasks-vision:_")
+    implementation("org.ejml:ejml-all:_")
+    implementation(AndroidX.appCompat)
+    implementation(Google.android.material)
+    implementation("org.joml:joml:_")
 
 }
