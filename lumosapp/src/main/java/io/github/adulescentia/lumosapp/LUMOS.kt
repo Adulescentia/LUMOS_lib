@@ -32,6 +32,7 @@ class LUMOS : ComponentActivity() {
         setContent {
             LUMOS_libTheme {
                 LUMOS_libApp()
+                //testing still
             }
         }
     }
