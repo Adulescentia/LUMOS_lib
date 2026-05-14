@@ -2,11 +2,14 @@ package io.github.adulescentia.LUMOS_lib;
 
 import org.joml.Vector3f;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 public class Detector {
-    private Device[] devices;
+    private ArrayList<Device> devices;
     private Vector3f userCoordinate;
 
-    public Detector(Device[] devices, Vector3f userCoordinate) {
+    public Detector(ArrayList<Device> devices, Vector3f userCoordinate) {
         this.devices = devices;
         this.userCoordinate = userCoordinate;
         updateAllDevices(userCoordinate);
@@ -19,9 +22,13 @@ public class Detector {
         }
     }
 
+    public void addDevice(Device device) {
+        devices.add(device);
+    }
+
 
     public Device getDevice(Vector3f armVector) {
-        if (devices == null || devices.length == 0) return null;
+        if (devices == null || devices.isEmpty()) return null;
 
         Vector3f normalizedArm = new Vector3f(armVector).normalize();
 
@@ -39,7 +46,7 @@ public class Detector {
                 bestMatch = device;
             }
         }
-        //should point out at least this much. ~~cos45
-        return (maxDot > 0.7f) ? bestMatch : null;
+        //should point out at least this much. ~~cos45 = 0.7 -> 0.6
+        return (maxDot > 0.6f) ? bestMatch : null;
     }
 }
