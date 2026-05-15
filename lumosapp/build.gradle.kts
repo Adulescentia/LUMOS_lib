@@ -58,4 +58,7 @@ dependencies {
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
     implementation(libs.core.ktx)
+    implementation(libs.org.eclipse.paho.client.mqttv3)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.androidx.security.crypto)
 }
