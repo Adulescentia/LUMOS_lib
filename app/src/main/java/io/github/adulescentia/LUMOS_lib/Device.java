@@ -8,6 +8,9 @@ public class Device {
     private Vector3f relativeCoordinate;
     private final int id;
     private final String name;
+    private String topic;
+    private int mode = 0; //(1~100)
+    //todo device type
 
     Device(String name, Vector3f coordinate ) {
         this.id = currentId;
@@ -17,7 +20,16 @@ public class Device {
     }
 
     public void updateRelativeCoordinate(Vector3f userPos) {
-        this.relativeCoordinate = new Vector3f(this.coordinate).sub(userPos).normalize();
+        Vector3f direction = new Vector3f(this.coordinate).sub(userPos);
+        if (direction.lengthSquared() > 0) {
+            this.relativeCoordinate = direction.normalize();
+        } else {
+            this.relativeCoordinate = new Vector3f(0, 0, 0);
+        }
+    }
+
+    public void modeUp(Vector3f start, Vector3f end) {
+
     }
 
     // --- Getters ---

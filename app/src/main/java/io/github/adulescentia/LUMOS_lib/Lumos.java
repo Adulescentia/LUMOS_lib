@@ -35,6 +35,7 @@ abstract class Lumos {
     /**register UI Handler
      * @param uiUpdateCallback Call Renderer with Image that MediaPipe lib provides (landmark visualized image)*/
     abstract void registerUIUpdater(Consumer<Image> uiUpdateCallback);
+
     /**register external result consumer, cf) please use copy method to copy Result Object.*/
     abstract void registerExternalResultChannel(Consumer<Result> resultConsumer);
     /**initializes whole system, ex) checking for camera validity*/
