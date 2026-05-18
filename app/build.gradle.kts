@@ -38,6 +38,7 @@ android {
 dependencies {
     //basic
     implementation(libs.appcompat)
+    implementation(libs.generativeai)
     implementation(libs.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
