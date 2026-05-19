@@ -2,6 +2,8 @@ package io.github.adulescentia.LUMOS_lib;
 
 import android.media.Image;
 
+import com.google.mediapipe.framework.image.MPImage;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -38,6 +40,13 @@ abstract class Lumos {
 
     /**register external result consumer, cf) please use copy method to copy Result Object.*/
     abstract void registerExternalResultChannel(Consumer<Result> resultConsumer);
+
+    /**
+     * register frame channel from host app camera pipeline.
+     * host application should provide MPImage frames and monotonic timestamp(ms).
+     */
+    abstract void registerExternalCameraFrameChannel(Consumer<CameraFrame> frameConsumer);
+
     /**initializes whole system, ex) checking for camera validity*/
     abstract void initialize();
 
@@ -45,6 +54,24 @@ abstract class Lumos {
      * this method also initiate sending processed data into resultConsumer channel and UI handler
      */
     abstract void startIoTControlProcess();
+
+    static class CameraFrame {
+        private final MPImage mpImage;
+        private final long timestampMs;
+
+        CameraFrame(@NonNull MPImage mpImage, long timestampMs) {
+            this.mpImage = mpImage;
+            this.timestampMs = timestampMs;
+        }
+
+        @NonNull MPImage getMpImage() {
+            return mpImage;
+        }
+
+        long getTimestampMs() {
+            return timestampMs;
+        }
+    }
 
 
 }
