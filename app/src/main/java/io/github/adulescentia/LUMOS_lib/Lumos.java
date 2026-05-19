@@ -55,8 +55,8 @@ abstract class Result implements Cloneable {
     abstract @NonNull Vector3f getDirection(); //todo armVector 구하기
 
     /**get user's currently selected Device*/
-    @NonNull Device getSelectedDevice() {
-        return Lumos.detector.getDevice(new Vector3f()/*todo 여기에 getDirection() (armVector) 호출*/);
+    @Nullable Device getSelectedDevice() {
+        return Lumos.detector.getDevice(getDirection());
     }
 
     /**get user's current position ( it can be relative pos at fixed point but it should be consistent enough )*/
