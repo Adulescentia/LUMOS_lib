@@ -29,8 +29,8 @@ LUMOS_lib는 다음 문제를 해결하기 위한 라이브러리입니다.
 
 ### 2-1. 디바이스 등록
 
-- `Lumos.registerDevice()` 호출 시 가상 디바이스를 생성하여 내부 목록에 추가합니다.
-- ID/이름은 순번 기반(`DEV_01`, `Smart Device_01`)으로 생성됩니다.
+- `Lumos.registerDevice(x, y, z, deviceName, deviceType)` 호출 시 **호스트 앱이 제공한 좌표/이름/타입** 그대로 디바이스를 등록합니다.
+- 라이브러리는 내부 식별용 ID(`DEV_01` 형태)를 자동 부여하지만, 위치/이름/타입은 호출자가 제공한 값을 사용합니다.
 
 ### 2-2. 디바이스 선택 알고리즘
 
@@ -64,9 +64,9 @@ LUMOS_lib는 다음 문제를 해결하기 위한 라이브러리입니다.
 ```java
 Lumos lumos = Lumos.getInstance();
 
-// 1) 디바이스 등록 (테스트용)
-lumos.registerDevice();
-lumos.registerDevice();
+// 1) 디바이스 등록 (호스트 앱이 좌표/이름/타입 제공)
+lumos.registerDevice(0.0, 1.2, 4.0, "LivingRoom TV", "DISPLAY");
+lumos.registerDevice(2.5, 1.0, 3.5, "Standing Lamp", "LIGHT");
 
 // 2) 결과 콜백 등록
 lumos.registerExternalResultChannel(result -> {
@@ -98,8 +98,8 @@ lumos.shutdown();
 - `static Lumos getInstance()`  
   싱글톤 인스턴스 획득
 
-- `@Nullable Device registerDevice()`  
-  가상 디바이스 1개 등록 후 반환
+- `@Nullable Device registerDevice(double x, double y, double z, String deviceName, String deviceType)`  
+  호스트가 제공한 좌표/이름/타입으로 디바이스 등록 후 반환
 
 - `Collection<Device> getDeviceList()`  
   등록된 디바이스 목록 반환
@@ -158,7 +158,7 @@ lumos.shutdown();
 ## 6) 현재 제약사항 및 주의점
 
 1. 일부 동작은 시뮬레이션 성격이 포함됩니다.
-   - `registerDevice()`는 랜덤 위치 가상 디바이스를 등록합니다.
+   - 디바이스 등록 자체는 랜덤이 아니라 **호스트 제공 좌표/이름/타입 기반**입니다.
    - `registerUIUpdater` 채널은 현재 mock image(`null`) 경로가 포함될 수 있습니다.
 
 2. MediaPipe 모델 파일이 앱 assets에 있어야 합니다.
@@ -182,7 +182,7 @@ lumos.shutdown();
 
 ## 8) 향후 개선 권장 항목
 
-- 디바이스 등록 API를 외부 좌표 기반으로 확장 (`registerDevice(name, position)`)  
+- 디바이스 등록 파라미터 검증 강화(좌표 범위, 이름/타입 null/blank 정책)  
 - Result에 신뢰도(score), timestamp, raw landmark 접근 API 추가  
 - 오류 코드/상태 코드 표준화 (init 실패, 모델 누락, 프레임 형식 오류)  
 - 샘플 앱 분리 모듈화 (library module + sample app module)
