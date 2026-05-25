@@ -1,11 +1,7 @@
 package io.github.adulescentia.LUMOS_lib;
 
 import android.content.Context;
-import android.media.Image;
-
 import com.google.mediapipe.framework.image.MPImage;
-import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -24,9 +20,7 @@ public class Lumos {
     private final MediaPipeArmVectorEngine armVectorEngine = new MediaPipeArmVectorEngine();
     private final GestureStateManager gestureStateManager = new GestureStateManager();
 
-    private Consumer<Image> uiUpdateCallback;
     private Consumer<Result> externalResultConsumer;
-    private Consumer<CameraFrame> externalCameraFrameHandler;
 
     private Device selectedDevice;
     private final Result latestResult = new Result();
@@ -97,19 +91,8 @@ public class Lumos {
         return devices;
     }
 
-    public void registerUIUpdater(Consumer<Image> uiUpdateCallback) {
-        this.uiUpdateCallback = uiUpdateCallback;
-    }
-
     public void registerExternalResultChannel(Consumer<Result> resultConsumer) {
         this.externalResultConsumer = resultConsumer;
-    }
-
-    /**
-     * host app should register a handler and invoke it with CameraFrame for every external camera frame.
-     */
-    public void registerExternalCameraFrameChannel(Consumer<CameraFrame> frameHandler) {
-        this.externalCameraFrameHandler = frameHandler;
     }
 
     public void initialize() {
@@ -117,14 +100,26 @@ public class Lumos {
     }
 
     public void startIoTControlProcess() {
-        // Processing starts when host app calls ingestExternalCameraFrame(...) per frame.
+        // no-op: host app drives this library by calling ingestExternalCameraFrame(...).
     }
 
     /**
-     * host app entry-point: pass external camera frame to this library.
+     * host app entry-point: pass external camera frame directly to LUMOS.
+     */
+    public void ingestExternalCameraFrame(@NonNull MPImage mpImage, long timestampMs) {
+        armVectorEngine.processFrame(mpImage, timestampMs);
+    }
+
+    /**
+     * compatibility API: wrapper object version.
      */
     public void ingestExternalCameraFrame(@NonNull CameraFrame frame) {
-        armVectorEngine.processFrame(frame.getMpImage(), frame.getTimestampMs());
+        ingestExternalCameraFrame(frame.getMpImage(), frame.getTimestampMs());
+    }
+
+    @NonNull
+    public Result getLatestResultSnapshot() {
+        return latestResult.clone();
     }
 
     public void shutdown() {
@@ -161,51 +156,5 @@ public class Lumos {
         public long getTimestampMs() {
             return timestampMs;
         }
-    }
-}
-
-class Result implements Cloneable {
-
-    private final Vector3f direction = new Vector3f(0, 0, 0);
-    @Nullable
-    private PoseLandmarkerResult rawResult;
-    private long timestampMs;
-
-    void update(@NonNull Vector3f newDirection, @Nullable PoseLandmarkerResult rawResult, long timestampMs) {
-        this.direction.set(newDirection);
-        this.rawResult = rawResult;
-        this.timestampMs = timestampMs;
-    }
-
-    @NonNull
-    Vector3f getDirection() {
-        return new Vector3f(direction);
-    }
-
-    @Nullable
-    Device getSelectedDevice() {
-        return Lumos.detector.getDevice(getDirection());
-    }
-
-    @NonNull
-    Vector3f getCurrentPosition() {
-        return Lumos.user.getUserCoordinate();
-    }
-
-    long getTimestampMs() {
-        return timestampMs;
-    }
-
-    @Nullable
-    PoseLandmarkerResult getRawResult() {
-        return rawResult;
-    }
-
-    @NonNull
-    @Override
-    public Result clone() {
-        Result copied = new Result();
-        copied.update(getDirection(), rawResult, timestampMs);
-        return copied;
     }
 }
