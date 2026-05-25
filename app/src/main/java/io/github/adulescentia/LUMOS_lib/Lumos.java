@@ -2,6 +2,8 @@ package io.github.adulescentia.LUMOS_lib;
 
 import android.content.Context;
 
+import com.google.mediapipe.framework.image.MPImage;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -101,17 +103,40 @@ public class Lumos {
         this.externalResultConsumer = resultConsumer;
     }
 
-    public void initialize() {
-        armVectorEngine.initialize(appContext, poseModelAssetPath);
-    }
+    /**register external result consumer, cf) please use copy method to copy Result Object.*/
+    abstract void registerExternalResultChannel(Consumer<Result> resultConsumer);
+
+    /**
+     * register frame channel from host app camera pipeline.
+     * host application should provide MPImage frames and monotonic timestamp(ms).
+     */
+    abstract void registerExternalCameraFrameChannel(Consumer<CameraFrame> frameConsumer);
+
+    /**initializes whole system, ex) checking for camera validity*/
+    abstract void initialize();
 
     public void startIoTControlProcess() {
         // no-op: host app drives this library by calling ingestExternalCameraFrame(...).
     }
 
-    public void ingestExternalCameraFrame(@NonNull MPImage mpImage, long timestampMs) {
-        armVectorEngine.processFrame(mpImage, timestampMs);
+    static class CameraFrame {
+        private final MPImage mpImage;
+        private final long timestampMs;
+
+        CameraFrame(@NonNull MPImage mpImage, long timestampMs) {
+            this.mpImage = mpImage;
+            this.timestampMs = timestampMs;
+        }
+
+        @NonNull MPImage getMpImage() {
+            return mpImage;
+        }
+
+        long getTimestampMs() {
+            return timestampMs;
+        }
     }
+
 
     public void ingestExternalCameraFrame(@NonNull CameraFrame frame) {
         ingestExternalCameraFrame(frame.getMpImage(), frame.getTimestampMs());
@@ -123,8 +148,9 @@ public class Lumos {
         return latestResult.clone();
     }
 
-    public void shutdown() {
-        armVectorEngine.close();
+    /**get user's currently selected Device*/
+    @Nullable Device getSelectedDevice() {
+        return Lumos.detector.getDevice(getDirection());
     }
 
     public void updateGesture(GestureStateManager.Gesture gesture, float wristY) {
