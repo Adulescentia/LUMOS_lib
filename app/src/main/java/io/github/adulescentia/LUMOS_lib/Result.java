@@ -1,54 +1,51 @@
 package io.github.adulescentia.LUMOS_lib;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
 
 import org.joml.Vector3f;
 
 public class Result implements Cloneable {
+    private final Vector3f direction = new Vector3f(0, 0, 1);
+    private final Vector3f cameraPos = new Vector3f(0, 0, 0);
 
-    private final Vector3f direction = new Vector3f(0, 0, 0);
-    @Nullable
-    private PoseLandmarkerResult rawResult;
-    private long timestampMs;
-
-    public void update(@NonNull Vector3f newDirection, @Nullable PoseLandmarkerResult rawResult, long timestampMs) {
-        this.direction.set(newDirection);
-        this.rawResult = rawResult;
-        this.timestampMs = timestampMs;
-    }
-
+    /**get user's current normalized direction
+     * @return Vector*/
     @NonNull
     public Vector3f getDirection() {
         return new Vector3f(direction);
     }
 
-    @Nullable
+    /**get user's currently selected Device
+     * @return Device*/
+    @NonNull
     public Device getSelectedDevice() {
-        return Lumos.detector.getDevice(getDirection());
+        Device selected = Lumos.getDetector().getDevice(direction);
+        if (selected != null) return selected;
+
+        Device fallback = Lumos.getDetector().getDevice(new Vector3f(0, 0, 1));
+        if (fallback != null) return fallback;
+
+        Device created = new Lumos().registerDevice();
+        if (created != null) return created;
+
+        throw new IllegalStateException("No device available");
     }
 
+    /**get user's current position ( it can be relative pos at fixed point but it should be consistent enough )*/
     @NonNull
     public Vector3f getCurrentPosition() {
-        return Lumos.user.getUserCoordinate();
+        return new Vector3f(Lumos.getUser().getUserCoordinate());
     }
 
-    public long getTimestampMs() {
-        return timestampMs;
-    }
-
-    @Nullable
-    public PoseLandmarkerResult getRawResult() {
-        return rawResult;
+    /**get camera's position*/
+    @NonNull
+    public Vector3f getCameraPos() {
+        return new Vector3f(cameraPos);
     }
 
     @NonNull
     @Override
     public Result clone() {
-        Result copied = new Result();
-        copied.update(getDirection(), rawResult, timestampMs);
-        return copied;
+        return new Result();
     }
 }
