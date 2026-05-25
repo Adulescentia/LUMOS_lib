@@ -1,196 +1,79 @@
 package io.github.adulescentia.LUMOS_lib;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.Matrix;
 import android.os.Bundle;
 import android.widget.Button;
-import android.widget.SeekBar;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.CameraSelector;
-import androidx.camera.core.ImageAnalysis;
-import androidx.camera.core.ImageProxy;
-import androidx.camera.core.Preview;
-import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.camera.view.PreviewView;
-import androidx.core.content.ContextCompat;
-
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.mediapipe.framework.image.BitmapImageBuilder;
-import com.google.mediapipe.framework.image.MPImage;
-
-import org.joml.Vector3f;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
-
     private Lumos lumos;
-    private TextView statusBox;
-    private PreviewView previewView;
-    private float wristY = 0.5f;
-    private String lastAction = "none";
-    private ExecutorService cameraExecutor;
-
-    private final ActivityResultLauncher<String> cameraPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
-                if (granted) startCamera();
-                else {
-                    lastAction = "camera permission denied";
-                    updateStatus();
-                }
-            });
+    private TextView stateText;
+    private TextView logText;
+    private ScrollView logScroll;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        previewView = findViewById(R.id.previewView);
-        statusBox = findViewById(R.id.statusBox);
-        cameraExecutor = Executors.newSingleThreadExecutor();
+        stateText = findViewById(R.id.stateText);
+        logText = findViewById(R.id.logText);
+        logScroll = findViewById(R.id.logScroll);
 
-        lumos = new Lumos(this);
-        lumos.registerDevice("Lamp", new Vector3f(0f, 0f, 5f));
-        lumos.registerDevice("Fan", new Vector3f(2f, 0f, 5f));
-        lumos.registerDevice("TV", new Vector3f(-2f, 0f, 5f));
+        lumos = new Lumos();
+        lumos.initialize();
+        lumos.registerExternalResultChannel(result -> runOnUiThread(() -> {
+            stateText.setText(
+                    "Direction: " + result.getDirection() + "\n" +
+                    "Current Position: " + result.getCurrentPosition() + "\n" +
+                    "Camera Position: " + result.getCameraPos());
+            appendLog("[RESULT] snapshot updated");
+        }));
 
-        boolean initialized = initializeLumosSafely();
-        lumos.registerExternalResultChannel(result -> runOnUiThread(this::updateStatus));
-
-        wireGestureButtons();
-        wireWristSeek();
-        if (initialized) {
-            checkCameraPermissionAndStart();
-        }
-        updateStatus();
+        bindButtons();
+        appendLog("LUMOS test app started");
     }
 
+    private void bindButtons() {
+        Button addDevice = findViewById(R.id.btnAddDevice);
+        Button startProcess = findViewById(R.id.btnStartProcess);
+        Button showDevices = findViewById(R.id.btnShowDevices);
+        Button showSelected = findViewById(R.id.btnShowSelected);
 
-    private boolean initializeLumosSafely() {
-        try {
-            lumos.initialize();
-            lastAction = "lumos initialized";
-            return true;
-        } catch (Exception e) {
-            lastAction = "initialize failed: " + e.getClass().getSimpleName();
-            return false;
-        }
-    }
+        addDevice.setOnClickListener(v -> {
+            Device d = lumos.registerDevice();
+            if (d != null) {
+                appendLog("[DEVICE] added: " + d.getName() + " (#" + d.getId() + ")");
+            } else {
+                appendLog("[DEVICE] add failed");
+            }
+        });
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (cameraExecutor != null) cameraExecutor.shutdown();
-        lumos.shutdown();
-    }
+        startProcess.setOnClickListener(v -> {
+            lumos.startIoTControlProcess();
+            appendLog("[PROCESS] startIoTControlProcess called");
+        });
 
-    private void checkCameraPermissionAndStart() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            startCamera();
-        } else {
-            cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
-        }
-    }
+        showDevices.setOnClickListener(v -> {
+            int size = lumos.getDeviceList().size();
+            appendLog("[DEVICE] total registered: " + size);
+        });
 
-    private void startCamera() {
-        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(this);
-        cameraProviderFuture.addListener(() -> {
+        showSelected.setOnClickListener(v -> {
             try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-                Preview preview = new Preview.Builder().build();
-                preview.setSurfaceProvider(previewView.getSurfaceProvider());
-
-                ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                        .build();
-
-                imageAnalysis.setAnalyzer(cameraExecutor, image -> {
-                    try {
-                        MPImage mpImage = toMpImage(image);
-                        lumos.ingestExternalCameraFrame(mpImage, System.currentTimeMillis());
-                    } catch (Exception e) {
-                        lastAction = "frame ingest error: " + e.getClass().getSimpleName();
-                    } finally {
-                        image.close();
-                    }
-                });
-
-                CameraSelector cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA;
-                cameraProvider.unbindAll();
-                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis);
-                lastAction = "camera started";
-                runOnUiThread(this::updateStatus);
+                Result result = new Result();
+                Device selected = result.getSelectedDevice();
+                appendLog("[SELECT] selected device: " + selected.getName());
             } catch (Exception e) {
-                lastAction = "camera start failed: " + e.getClass().getSimpleName();
-                runOnUiThread(this::updateStatus);
+                appendLog("[SELECT] none (" + e.getClass().getSimpleName() + ")");
             }
-        }, ContextCompat.getMainExecutor(this));
-    }
-
-    @NonNull
-    private MPImage toMpImage(@NonNull ImageProxy image) {
-        Bitmap bitmap = previewView.getBitmap();
-        if (bitmap == null) {
-            bitmap = Bitmap.createBitmap(16, 16, Bitmap.Config.ARGB_8888);
-        }
-        Matrix matrix = new Matrix();
-        matrix.postRotate(image.getImageInfo().getRotationDegrees());
-        Bitmap rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-        return new BitmapImageBuilder(rotated).build();
-    }
-
-    private void wireGestureButtons() {
-        bindGesture(R.id.btnFist, GestureStateManager.Gesture.FIST, "gesture:FIST");
-        bindGesture(R.id.btnPalm, GestureStateManager.Gesture.PALM, "gesture:PALM(power toggle)");
-        bindGesture(R.id.btnOneFinger, GestureStateManager.Gesture.ONE_FINGER, "gesture:ONE_FINGER(select toggle)");
-        bindGesture(R.id.btnVSign, GestureStateManager.Gesture.V_SIGN, "gesture:V_SIGN(mode toggle)");
-        bindGesture(R.id.btnUndef, GestureStateManager.Gesture.UNDEF, "gesture:UNDEF");
-    }
-
-    private void bindGesture(int btnId, GestureStateManager.Gesture gesture, String actionLabel) {
-        Button btn = findViewById(btnId);
-        btn.setOnClickListener(v -> {
-            lumos.updateGesture(gesture, wristY);
-            lastAction = actionLabel;
-            updateStatus();
         });
     }
 
-    private void wireWristSeek() {
-        SeekBar seekBar = findViewById(R.id.wristSeekBar);
-        seekBar.setMax(100);
-        seekBar.setProgress(50);
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                wristY = progress / 100f;
-                updateStatus();
-            }
-            @Override public void onStartTrackingTouch(SeekBar seekBar) { }
-            @Override public void onStopTrackingTouch(SeekBar seekBar) { }
-        });
-    }
-
-    private void updateStatus() {
-        Device selected = lumos.getSelectedDevice();
-        Result result = lumos.getLatestResultSnapshot();
-        String selectedName = (selected == null) ? "none" : selected.getName();
-
-        String msg = "Selected Device: " + selectedName + "\n"
-                + "Direction: " + result.getDirection() + "\n"
-                + "WristY: " + wristY + "\n"
-                + "Last Action: " + lastAction + "\n"
-                + "MediaPipe RawResult: " + (result.getRawResult() == null ? "null" : "ok") + "\n"
-                + "Guide: 손 제스처 + 카메라 입력으로 테스트하세요.";
-
-        statusBox.setText(msg);
+    private void appendLog(String line) {
+        logText.append(line + "\n");
+        logScroll.post(() -> logScroll.fullScroll(ScrollView.FOCUS_DOWN));
     }
 }
