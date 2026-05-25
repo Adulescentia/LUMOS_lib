@@ -8,9 +8,49 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="LUMOS Library Test App"
+        android:text="LUMOS 통합 테스트 앱"
         android:textSize="20sp"
         android:textStyle="bold" />
+
+    <EditText
+        android:id="@+id/inputName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="디바이스 이름 (예: 거실 TV)" />
+
+    <EditText
+        android:id="@+id/inputType"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="디바이스 타입 (예: DISPLAY/LIGHT)" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <EditText
+            android:id="@+id/inputX"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="x"
+            android:inputType="numberDecimal|numberSigned" />
+        <EditText
+            android:id="@+id/inputY"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="y"
+            android:inputType="numberDecimal|numberSigned" />
+        <EditText
+            android:id="@+id/inputZ"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="z"
+            android:inputType="numberDecimal|numberSigned" />
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -23,14 +63,14 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Add Device" />
+            android:text="디바이스 등록" />
 
         <Button
             android:id="@+id/btnStartProcess"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Start" />
+            android:text="처리 시작" />
     </LinearLayout>
 
     <LinearLayout
@@ -44,14 +84,25 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Count" />
+            android:text="디바이스 수" />
 
         <Button
             android:id="@+id/btnShowSelected"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Selected" />
+            android:text="선택 디바이스" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal">
+        <Button android:id="@+id/btnFist" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="FIST"/>
+        <Button android:id="@+id/btnOne" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="ONE"/>
+        <Button android:id="@+id/btnPalm" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="PALM"/>
+        <Button android:id="@+id/btnV" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="V"/>
     </LinearLayout>
 
     <TextView
