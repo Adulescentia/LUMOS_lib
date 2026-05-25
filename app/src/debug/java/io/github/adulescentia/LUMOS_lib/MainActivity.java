@@ -22,18 +22,23 @@ public class MainActivity extends AppCompatActivity {
         logText = findViewById(R.id.logText);
         logScroll = findViewById(R.id.logScroll);
 
-        lumos = new Lumos();
-        lumos.initialize();
-        lumos.registerExternalResultChannel(result -> runOnUiThread(() -> {
-            stateText.setText(
-                    "Direction: " + result.getDirection() + "\n" +
-                    "Current Position: " + result.getCurrentPosition() + "\n" +
-                    "Camera Position: " + result.getCameraPos());
-            appendLog("[RESULT] snapshot updated");
-        }));
+        try {
+            lumos = new Lumos();
+            lumos.initialize();
+            lumos.registerExternalResultChannel(result -> runOnUiThread(() -> {
+                stateText.setText(
+                        "Direction: " + result.getDirection() + "\n" +
+                        "Current Position: " + result.getCurrentPosition() + "\n" +
+                        "Camera Position: " + result.getCameraPos());
+                appendLog("[RESULT] snapshot updated");
+            }));
 
-        bindButtons();
-        appendLog("LUMOS test app started");
+            bindButtons();
+            appendLog("LUMOS test app started");
+        } catch (Throwable t) {
+            stateText.setText("Startup failed: " + t.getClass().getSimpleName() + "\n" + String.valueOf(t.getMessage()));
+            appendLog("[FATAL] startup error: " + t);
+        }
     }
 
     private void bindButtons() {
@@ -43,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
         Button showSelected = findViewById(R.id.btnShowSelected);
 
         addDevice.setOnClickListener(v -> {
+            if (lumos == null) { appendLog("[ERROR] lumos is null"); return; }
             Device d = lumos.registerDevice();
             if (d != null) {
                 appendLog("[DEVICE] added: " + d.getName() + " (#" + d.getId() + ")");
@@ -52,11 +58,13 @@ public class MainActivity extends AppCompatActivity {
         });
 
         startProcess.setOnClickListener(v -> {
+            if (lumos == null) { appendLog("[ERROR] lumos is null"); return; }
             lumos.startIoTControlProcess();
             appendLog("[PROCESS] startIoTControlProcess called");
         });
 
         showDevices.setOnClickListener(v -> {
+            if (lumos == null) { appendLog("[ERROR] lumos is null"); return; }
             int size = lumos.getDeviceList().size();
             appendLog("[DEVICE] total registered: " + size);
         });
