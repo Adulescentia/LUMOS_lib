@@ -16,13 +16,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        stateText = findViewById(R.id.stateText);
-        logText = findViewById(R.id.logText);
-        logScroll = findViewById(R.id.logScroll);
-
         try {
+            setContentView(R.layout.activity_main);
+
+            stateText = findViewById(R.id.stateText);
+            logText = findViewById(R.id.logText);
+            logScroll = findViewById(R.id.logScroll);
+
             lumos = new Lumos();
             lumos.initialize();
             lumos.registerExternalResultChannel(result -> runOnUiThread(() -> {
@@ -36,7 +36,9 @@ public class MainActivity extends AppCompatActivity {
             bindButtons();
             appendLog("LUMOS test app started");
         } catch (Throwable t) {
-            stateText.setText("Startup failed: " + t.getClass().getSimpleName() + "\n" + String.valueOf(t.getMessage()));
+            if (stateText != null) {
+                stateText.setText("Startup failed: " + t.getClass().getSimpleName() + "\n" + String.valueOf(t.getMessage()));
+            }
             appendLog("[FATAL] startup error: " + t);
         }
     }
@@ -81,7 +83,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void appendLog(String line) {
+        if (logText == null) {
+            return;
+        }
         logText.append(line + "\n");
-        logScroll.post(() -> logScroll.fullScroll(ScrollView.FOCUS_DOWN));
+        if (logScroll != null) {
+            logScroll.post(() -> logScroll.fullScroll(ScrollView.FOCUS_DOWN));
+        }
     }
 }
