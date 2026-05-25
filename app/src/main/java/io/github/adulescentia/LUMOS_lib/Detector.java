@@ -3,7 +3,6 @@ package io.github.adulescentia.LUMOS_lib;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class Detector {
     private ArrayList<Device> devices;
@@ -29,6 +28,7 @@ public class Detector {
 
     public Device getDevice(Vector3f armVector) {
         if (devices == null || devices.isEmpty()) return null;
+        if (armVector == null || armVector.lengthSquared() == 0.0f) return null;
 
         Vector3f normalizedArm = new Vector3f(armVector).normalize();
 
@@ -39,7 +39,7 @@ public class Detector {
             Vector3f deviceDir = device.getRelativeCoordinate();
             if (deviceDir == null) continue;
 
-            float currentDot = normalizedArm.dot(deviceDir);
+            float currentDot = normalizedArm.dot(new Vector3f(deviceDir).normalize());
 
             if (currentDot > maxDot) {
                 maxDot = currentDot;
