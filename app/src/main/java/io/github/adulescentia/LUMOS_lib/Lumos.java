@@ -1,9 +1,11 @@
 package io.github.adulescentia.LUMOS_lib;
 
 import android.content.Context;
-import com.google.mediapipe.framework.image.MPImage;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.google.mediapipe.framework.image.MPImage;
 
 import org.joml.Vector3f;
 
@@ -35,18 +37,7 @@ public class Lumos {
 
     private void wireInternalPipelines() {
         armVectorEngine.setVectorResultListener((armVector, rawResult, timestampMs) -> {
-            latestResult.update(armVector, rawResult, timestampMs);
-            detector.updateAllDevices(user.getUserCoordinate());
-
-            if (gestureStateManager.isDeviceSelected()) {
-                selectedDevice = detector.getDevice(armVector);
-            } else {
-                selectedDevice = null;
-            }
-
-            if (externalResultConsumer != null) {
-                externalResultConsumer.accept(latestResult.clone());
-            }
+            updateArmVectorInternal(armVector, rawResult, timestampMs);
         });
 
         gestureStateManager.setActionListener(new GestureStateManager.ActionListener() {
@@ -69,6 +60,21 @@ public class Lumos {
                 }
             }
         });
+    }
+
+    private void updateArmVectorInternal(@NonNull Vector3f armVector, @Nullable Object rawResult, long timestampMs) {
+        latestResult.update(armVector, null, timestampMs);
+        detector.updateAllDevices(user.getUserCoordinate());
+
+        if (gestureStateManager.isDeviceSelected()) {
+            selectedDevice = detector.getDevice(armVector);
+        } else {
+            selectedDevice = null;
+        }
+
+        if (externalResultConsumer != null) {
+            externalResultConsumer.accept(latestResult.clone());
+        }
     }
 
     public void setPoseModelAssetPath(@NonNull String poseModelAssetPath) {
@@ -103,18 +109,17 @@ public class Lumos {
         // no-op: host app drives this library by calling ingestExternalCameraFrame(...).
     }
 
-    /**
-     * host app entry-point: pass external camera frame directly to LUMOS.
-     */
     public void ingestExternalCameraFrame(@NonNull MPImage mpImage, long timestampMs) {
         armVectorEngine.processFrame(mpImage, timestampMs);
     }
 
-    /**
-     * compatibility API: wrapper object version.
-     */
     public void ingestExternalCameraFrame(@NonNull CameraFrame frame) {
         ingestExternalCameraFrame(frame.getMpImage(), frame.getTimestampMs());
+    }
+
+    /** Test helper: bypass MediaPipe and feed an arm vector directly. */
+    public void ingestArmVectorForTest(@NonNull Vector3f armVector, long timestampMs) {
+        updateArmVectorInternal(armVector, null, timestampMs);
     }
 
     @NonNull
