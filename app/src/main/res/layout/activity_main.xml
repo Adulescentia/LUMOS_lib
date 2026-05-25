@@ -5,18 +5,16 @@
     android:orientation="vertical"
     android:padding="12dp">
 
-    <TextView
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="LUMOS Test Controller"
-        android:textSize="20sp"
-        android:textStyle="bold" />
+        android:layout_height="180dp" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:text="Gesture" />
+        android:text="Gesture"
+        android:layout_marginTop="8dp" />
 
     <LinearLayout
         android:layout_width="match_parent"
