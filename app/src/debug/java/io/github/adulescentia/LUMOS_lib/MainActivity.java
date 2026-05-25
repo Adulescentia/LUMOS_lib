@@ -62,13 +62,27 @@ public class MainActivity extends AppCompatActivity {
         lumos.registerDevice("Fan", new Vector3f(2f, 0f, 5f));
         lumos.registerDevice("TV", new Vector3f(-2f, 0f, 5f));
 
-        lumos.initialize();
+        boolean initialized = initializeLumosSafely();
         lumos.registerExternalResultChannel(result -> runOnUiThread(this::updateStatus));
 
         wireGestureButtons();
         wireWristSeek();
-        checkCameraPermissionAndStart();
+        if (initialized) {
+            checkCameraPermissionAndStart();
+        }
         updateStatus();
+    }
+
+
+    private boolean initializeLumosSafely() {
+        try {
+            lumos.initialize();
+            lastAction = "lumos initialized";
+            return true;
+        } catch (Exception e) {
+            lastAction = "initialize failed: " + e.getClass().getSimpleName();
+            return false;
+        }
     }
 
     @Override
