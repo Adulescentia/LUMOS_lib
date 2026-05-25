@@ -2,44 +2,67 @@ package io.github.adulescentia.LUMOS_lib;
 
 import org.joml.Vector3f;
 
+/**
+ * 가상의 IoT 디바이스 모델.
+ * 요구사항: id, name, position 필수 필드 보유.
+ */
 public class Device {
-    static int currentId = 0;
-    private Vector3f coordinate;
-    private Vector3f relativeCoordinate;
-    private final int id;
+    private final String id;
     private final String name;
-    private String topic;
-    private int mode = 0; //(1~100)
-    //todo device type
+    private final String type;
+    private final Vector3f position;
 
-    Device(String name, Vector3f coordinate ) {
-        this.id = currentId;
+    // Detector 연동용 상대 방향 캐시
+    private Vector3f relativeCoordinate = new Vector3f(0, 0, 0);
+
+
+    // 기존 테스트/코드 호환용 생성자
+    public Device(String name, Vector3f position) {
+        this("LEGACY_" + name, name, "UNKNOWN", position);
+    }
+
+    public Device(String id, String name, Vector3f position) {
+        this(id, name, "UNKNOWN", position);
+    }
+
+    public Device(String id, String name, String type, Vector3f position) {
+        this.id = id;
         this.name = name;
-        this.coordinate = coordinate;
-        currentId ++;
+        this.type = type;
+        this.position = new Vector3f(position);
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public Vector3f getPosition() {
+        return new Vector3f(position);
+    }
+
+    // 기존 코드 호환용
+    public Vector3f getCoordinate() {
+        return getPosition();
+    }
+
+    public Vector3f getRelativeCoordinate() {
+        return new Vector3f(relativeCoordinate);
     }
 
     public void updateRelativeCoordinate(Vector3f userPos) {
-        Vector3f direction = new Vector3f(this.coordinate).sub(userPos);
-        if (direction.lengthSquared() > 0) {
+        Vector3f direction = new Vector3f(position).sub(userPos);
+        if (direction.lengthSquared() > 0f) {
             this.relativeCoordinate = direction.normalize();
         } else {
             this.relativeCoordinate = new Vector3f(0, 0, 0);
         }
     }
-
-    public void modeUp(Vector3f start, Vector3f end) {
-
-    }
-
-    // --- Getters ---
-    public Vector3f getCoordinate() { return coordinate; }
-    public Vector3f getRelativeCoordinate() { return relativeCoordinate; }
-    public String getName() { return name; }
-    public int getId() { return id; }
-
-
-    // --- Setters ---
-    public void setCoordinate (Vector3f coordinate) { this.coordinate = coordinate; }
-
 }

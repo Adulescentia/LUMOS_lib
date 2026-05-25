@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
             logText = findViewById(R.id.logText);
             logScroll = findViewById(R.id.logScroll);
 
-            lumos = new Lumos();
+            lumos = Lumos.getInstance();
             lumos.initialize();
             lumos.registerExternalResultChannel(result -> runOnUiThread(() -> {
                 stateText.setText(
@@ -51,7 +51,8 @@ public class MainActivity extends AppCompatActivity {
 
         addDevice.setOnClickListener(v -> {
             if (lumos == null) { appendLog("[ERROR] lumos is null"); return; }
-            Device d = lumos.registerDevice();
+            int idx = lumos.getDeviceList().size() + 1;
+            Device d = lumos.registerDevice(idx, 1.2, 4.0 + idx, "Device-" + idx, "LIGHT");
             if (d != null) {
                 appendLog("[DEVICE] added: " + d.getName() + " (#" + d.getId() + ")");
             } else {
