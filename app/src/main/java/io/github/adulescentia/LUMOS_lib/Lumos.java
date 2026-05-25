@@ -2,11 +2,12 @@ package io.github.adulescentia.LUMOS_lib;
 
 import android.content.Context;
 
+import com.google.mediapipe.framework.image.MPImage;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.mediapipe.framework.image.MPImage;
-import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
 
 import org.joml.Vector3f;
 
@@ -63,8 +64,8 @@ public class Lumos {
         });
     }
 
-    private void updateArmVectorInternal(@NonNull Vector3f armVector, @Nullable PoseLandmarkerResult rawResult, long timestampMs) {
-        latestResult.update(armVector, rawResult, timestampMs);
+    private void updateArmVectorInternal(@NonNull Vector3f armVector, @Nullable Object rawResult, long timestampMs) {
+        latestResult.update(armVector, null, timestampMs);
         detector.updateAllDevices(user.getUserCoordinate());
 
         if (gestureStateManager.isDeviceSelected()) {
@@ -102,23 +103,40 @@ public class Lumos {
         this.externalResultConsumer = resultConsumer;
     }
 
-    private boolean isInitialized = false;
+    /**register external result consumer, cf) please use copy method to copy Result Object.*/
+    abstract void registerExternalResultChannel(Consumer<Result> resultConsumer);
 
-    public void initialize() {
-        armVectorEngine.initialize(appContext, poseModelAssetPath);
-        isInitialized = true;
-    }
+    /**
+     * register frame channel from host app camera pipeline.
+     * host application should provide MPImage frames and monotonic timestamp(ms).
+     */
+    abstract void registerExternalCameraFrameChannel(Consumer<CameraFrame> frameConsumer);
+
+    /**initializes whole system, ex) checking for camera validity*/
+    abstract void initialize();
 
     public void startIoTControlProcess() {
         // no-op: host app drives this library by calling ingestExternalCameraFrame(...).
     }
 
-    public void ingestExternalCameraFrame(@NonNull MPImage mpImage, long timestampMs) {
-        if (!isInitialized) {
-            throw new IllegalStateException("Lumos is not initialized. Call initialize() first.");
+    static class CameraFrame {
+        private final MPImage mpImage;
+        private final long timestampMs;
+
+        CameraFrame(@NonNull MPImage mpImage, long timestampMs) {
+            this.mpImage = mpImage;
+            this.timestampMs = timestampMs;
         }
-        armVectorEngine.processFrame(mpImage, timestampMs);
+
+        @NonNull MPImage getMpImage() {
+            return mpImage;
+        }
+
+        long getTimestampMs() {
+            return timestampMs;
+        }
     }
+
 
     public void ingestExternalCameraFrame(@NonNull CameraFrame frame) {
         ingestExternalCameraFrame(frame.getMpImage(), frame.getTimestampMs());
@@ -130,9 +148,9 @@ public class Lumos {
         return latestResult.clone();
     }
 
-    public void shutdown() {
-        armVectorEngine.close();
-        isInitialized = false;
+    /**get user's currently selected Device*/
+    @Nullable Device getSelectedDevice() {
+        return Lumos.detector.getDevice(getDirection());
     }
 
     public void updateGesture(GestureStateManager.Gesture gesture, float wristY) {
