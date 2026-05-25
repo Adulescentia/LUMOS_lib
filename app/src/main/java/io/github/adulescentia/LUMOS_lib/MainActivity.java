@@ -28,8 +28,10 @@ public class MainActivity extends AppCompatActivity {
         lumos.registerDevice("Fan", new Vector3f(2f, 0f, 5f));
         lumos.registerDevice("TV", new Vector3f(-2f, 0f, 5f));
 
+        lumos.initialize();
+        lumos.registerExternalResultChannel(result -> runOnUiThread(this::updateStatus));
+
         wireGestureButtons();
-        wirePointButtons();
         wireWristSeek();
         updateStatus();
     }
@@ -46,21 +48,6 @@ public class MainActivity extends AppCompatActivity {
         Button btn = findViewById(btnId);
         btn.setOnClickListener(v -> {
             lumos.updateGesture(gesture, wristY);
-            lastAction = actionLabel;
-            updateStatus();
-        });
-    }
-
-    private void wirePointButtons() {
-        bindPoint(R.id.btnPointLamp, new Vector3f(0f, 0f, 1f), "point:Lamp");
-        bindPoint(R.id.btnPointFan, new Vector3f(0.37f, 0f, 0.93f), "point:Fan");
-        bindPoint(R.id.btnPointTv, new Vector3f(-0.37f, 0f, 0.93f), "point:TV");
-    }
-
-    private void bindPoint(int btnId, Vector3f vector, String actionLabel) {
-        Button btn = findViewById(btnId);
-        btn.setOnClickListener(v -> {
-            lumos.ingestArmVectorForTest(vector, System.currentTimeMillis());
             lastAction = actionLabel;
             updateStatus();
         });
@@ -91,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
                 + "Direction: " + result.getDirection() + "\n"
                 + "WristY: " + wristY + "\n"
                 + "Last Action: " + lastAction + "\n"
-                + "Guide: FIST -> ONE_FINGER 로 선택 토글, FIST -> PALM 전원 토글, FIST/UNDEF -> V_SIGN 모드 토글";
+                + "Guide: 카메라 프레임을 LUMOS.ingestExternalCameraFrame(...)로 전달하면 MediaPipe 결과가 반영됩니다.";
 
         statusBox.setText(msg);
     }

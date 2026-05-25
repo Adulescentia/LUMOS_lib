@@ -117,10 +117,6 @@ public class Lumos {
         ingestExternalCameraFrame(frame.getMpImage(), frame.getTimestampMs());
     }
 
-    /** Test helper: bypass MediaPipe and feed an arm vector directly. */
-    public void ingestArmVectorForTest(@NonNull Vector3f armVector, long timestampMs) {
-        updateArmVectorInternal(armVector, null, timestampMs);
-    }
 
     @NonNull
     public Result getLatestResultSnapshot() {
