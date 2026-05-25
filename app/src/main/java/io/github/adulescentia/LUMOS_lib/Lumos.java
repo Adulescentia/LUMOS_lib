@@ -1,9 +1,12 @@
 package io.github.adulescentia.LUMOS_lib;
 
-import android.media.Image;
+import android.content.Context;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.google.mediapipe.framework.image.MPImage;
+import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
 
 import org.joml.Vector3f;
 
