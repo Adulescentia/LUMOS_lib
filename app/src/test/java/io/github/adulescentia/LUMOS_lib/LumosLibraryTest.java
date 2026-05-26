@@ -9,6 +9,7 @@ public class LumosLibraryTest {
     @Test
     public void registerDeviceAndGetDeviceList() {
         Lumos lumos = Lumos.getInstance();
+        lumos.initialize();
         Device d = lumos.registerDevice(0.0, 1.0, 4.0, "TV", "DISPLAY");
         assertNotNull(d);
         assertFalse(lumos.getDeviceList().isEmpty());
@@ -20,6 +21,18 @@ public class LumosLibraryTest {
         lumos.initialize();
         lumos.startIoTControlProcess();
         assertNotNull(lumos.getLatestResultSnapshot());
+    }
+
+    @Test
+    public void notInitializedThrowsSpecificErr() {
+        Lumos lumos = Lumos.getInstance();
+        lumos.shutdown();
+        try {
+            lumos.startIoTControlProcess();
+            fail("Expected NotInitializedErr");
+        } catch (NotInitializedErr expected) {
+            assertTrue(expected.getMessage().contains("initialize"));
+        }
     }
 
     @Test

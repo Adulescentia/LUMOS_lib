@@ -75,6 +75,17 @@ public class Lumos {
                                               @NonNull String deviceName,
                                               @NonNull String deviceType) {
         try {
+            if (!initialized) throw new NotInitializedErr("Call initialize() before registerDevice()");
+            if (Double.isNaN(x) || Double.isNaN(y) || Double.isNaN(z)
+                    || Double.isInfinite(x) || Double.isInfinite(y) || Double.isInfinite(z)) {
+                throw new InvalidInputErr("Device coordinates must be finite numbers");
+            }
+            if (deviceName == null || deviceName.trim().isEmpty()) {
+                throw new InvalidInputErr("deviceName must not be null/blank");
+            }
+            if (deviceType == null || deviceType.trim().isEmpty()) {
+                throw new InvalidInputErr("deviceType must not be null/blank");
+            }
             String id = String.format("DEV_%02d", sequence);
             Device d = new Device(id, deviceName, deviceType,
                     new Vector3f((float) x, (float) y, (float) z));
@@ -84,9 +95,11 @@ public class Lumos {
             Log.d(TAG, "registerDevice -> id=" + id + ", name=" + deviceName + ", type=" + deviceType
                     + ", pos=" + d.getPosition());
             return d;
+        } catch (LumosException e) {
+            throw e;
         } catch (Exception e) {
             Log.e(TAG, "registerDevice failed", e);
-            return null;
+            throw new LumosException("registerDevice failed", e);
         }
     }
 
@@ -94,9 +107,15 @@ public class Lumos {
         return new ArrayList<>(devices);
     }
 
-    public void registerUIUpdater(Consumer<Image> uiUpdateCallback) { this.uiUpdater = uiUpdateCallback; }
+    public void registerUIUpdater(Consumer<Image> uiUpdateCallback) {
+        if (uiUpdateCallback == null) throw new InvalidInputErr("uiUpdateCallback must not be null");
+        this.uiUpdater = uiUpdateCallback;
+    }
 
-    public void registerExternalResultChannel(Consumer<Result> resultConsumer) { this.resultChannel = resultConsumer; }
+    public void registerExternalResultChannel(Consumer<Result> resultConsumer) {
+        if (resultConsumer == null) throw new InvalidInputErr("resultConsumer must not be null");
+        this.resultChannel = resultConsumer;
+    }
 
     /** 하위호환 초기화 */
     public void initialize() {
@@ -113,16 +132,18 @@ public class Lumos {
     }
 
     public void startIoTControlProcess() {
-        if (!initialized) throw new IllegalStateException("Call initialize() first");
+        if (!initialized) throw new NotInitializedErr("Call initialize() first");
         // host-driven: ingestExternalCameraFrame() 호출로 실제 처리 시작
     }
 
     public void ingestExternalCameraFrame(@NonNull MPImage mpImage, long timestampMs) {
-        if (!initialized) throw new IllegalStateException("Call initialize() first");
+        if (!initialized) throw new NotInitializedErr("Call initialize() first");
         armVectorEngine.processFrame(mpImage, timestampMs);
     }
 
     public void updateGesture(@NonNull GestureStateManager.Gesture gesture, float wristY) {
+        if (!initialized) throw new NotInitializedErr("Call initialize() first");
+        if (gesture == null) throw new InvalidInputErr("gesture must not be null");
         gestureStateManager.update(gesture, wristY);
     }
 
