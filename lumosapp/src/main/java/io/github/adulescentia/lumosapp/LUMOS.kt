@@ -26,10 +26,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.adulescentia.lumosapp.ui.theme.LUMOS_libTheme
 import androidx.core.content.edit
+import io.github.adulescentia.LUMOS_lib.Lumos
 
 class LUMOS : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Lumos.getInstance().initialize()
         enableEdgeToEdge()
         setContent {
             LUMOS_libTheme {
