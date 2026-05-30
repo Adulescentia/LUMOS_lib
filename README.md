@@ -277,3 +277,23 @@ lumos.shutdown();
 ## 11) 라이선스/주의
 
 이 저장소의 실제 라이선스 파일/정책을 반드시 확인 후 사용하세요.
+
+---
+
+## 12) 테스트 앱 실행
+
+`lumosapp` 모듈은 기존 `app` 모듈의 Java 소스 코드를 수정하지 않고, `lumoslib` 래퍼 라이브러리 모듈을 통해 LUMOS API를 참조하는 간단한 Compose 테스트 앱입니다.
+
+```bash
+./gradlew :lumosapp:installDebug
+```
+
+앱에서 다음 기능을 빠르게 확인할 수 있습니다.
+
+- `initialize()` 기반 API 테스트 모드 시작
+- 디바이스 수동 등록 및 샘플 디바이스 3개 등록
+- 등록 디바이스 직렬화/역직렬화
+- `startIoTControlProcess()` 및 `getLatestResultSnapshot()` 호출
+- `ONE_FINGER`, `FIST`, `PALM`, `V_SIGN` 제스처 입력
+
+`lumoslib`는 테스트 앱이 라이브러리를 의존성처럼 사용할 수 있도록 기존 `app/src/main/java`를 source set으로 참조합니다. 따라서 기존 라이브러리/앱 코드를 직접 변경하지 않고 테스트 앱만 교체해 동작을 확인할 수 있습니다. 실제 카메라 프레임 처리 검증은 호스트 앱에서 `initialize(context, modelAssetPath)`와 `ingestExternalCameraFrame(...)`을 연결해 진행하세요.
