@@ -1,7 +1,5 @@
 package io.github.adulescentia.LUMOS_lib;
 
-import android.util.Log;
-
 public class GestureStateManager {
     private static final String TAG = "GestureStateManager";
 
@@ -53,10 +51,13 @@ public class GestureStateManager {
                 if (isComingFromReadyState && prevGesture != Gesture.ONE_FINGER) {
                     isDeviceSelected = !isDeviceSelected;
                     if (isDeviceSelected) {
-                        Log.d(TAG, "🎯 [EVENT] 디바이스가 선택(조준 완료) 되었습니다.");
+                        LumosLog.d(TAG, "🎯 [EVENT] 디바이스가 선택(조준 완료) 되었습니다.");
                         isTrackingModeActive = false;
                     } else {
-                        Log.d(TAG, "❌ [EVENT] 디바이스 선택이 해제되었습니다.");
+                        LumosLog.d(TAG, "❌ [EVENT] 디바이스 선택이 해제되었습니다.");
+                    }
+                    if (actionListener != null) {
+                        actionListener.onDeviceSelectionToggled(isDeviceSelected);
                     }
                     if (actionListener != null) {
                         actionListener.onDeviceSelectionToggled(isDeviceSelected);
@@ -66,7 +67,7 @@ public class GestureStateManager {
 
             case PALM:
                 if (prevGesture == Gesture.FIST) {
-                    Log.d(TAG, "🔌 [EVENT] 디바이스 전원(On/Off) 토글 명령이 실행되었습니다.");
+                    LumosLog.d(TAG, "🔌 [EVENT] 디바이스 전원(On/Off) 토글 명령이 실행되었습니다.");
                     if (actionListener != null) {
                         actionListener.onDevicePowerToggled();
                     }
@@ -81,13 +82,13 @@ public class GestureStateManager {
                         if (isTrackingModeActive) {
                             baseWristY = currentWristY;
                             currentModeValue = 0.0f;
-                            Log.d(TAG, "📏 [MODE] 모드 조절 활성화. 기준 Y: " + baseWristY + " (감도: " + sensitivity + ")");
+                            LumosLog.d(TAG, "📏 [MODE] 모드 조절 활성화. 기준 Y: " + baseWristY + " (감도: " + sensitivity + ")");
                         } else {
-                            Log.d(TAG, "💾 [MODE] 모드 조절 비활성화. 최종 높이 변화 mode 반영: " + currentModeValue);
+                            LumosLog.d(TAG, "💾 [MODE] 모드 조절 비활성화. 최종 높이 변화 mode 반영: " + currentModeValue);
                             applyDeviceMode(currentModeValue);
                         }
                     } else {
-                        Log.w(TAG, "⚠️ [WARN] 선택된 디바이스가 없어 모드 조절을 시작할 수 없습니다.");
+                        LumosLog.w(TAG, "⚠️ [WARN] 선택된 디바이스가 없어 모드 조절을 시작할 수 없습니다.");
                     }
                 }
                 break;
@@ -100,7 +101,7 @@ public class GestureStateManager {
         if (isTrackingModeActive) {
             float deltaY = baseWristY - currentWristY;
             currentModeValue = deltaY * sensitivity;
-            Log.d(TAG, "🔄 [TRACKING] 실시간 높이 변화량 추적 중... deltaY(순수): " + deltaY + " -> 적용값(mode): " + currentModeValue);
+            LumosLog.d(TAG, "🔄 [TRACKING] 실시간 높이 변화량 추적 중... deltaY(순수): " + deltaY + " -> 적용값(mode): " + currentModeValue);
         }
 
         prevGesture = currentGesture;

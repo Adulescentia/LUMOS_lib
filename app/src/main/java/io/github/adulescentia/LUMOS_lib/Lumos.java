@@ -2,8 +2,6 @@ package io.github.adulescentia.LUMOS_lib;
 
 import android.content.Context;
 import android.media.Image;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -45,17 +43,17 @@ public class Lumos {
     private Lumos() {
         gestureStateManager.setActionListener(new GestureStateManager.ActionListener() {
             @Override public void onDeviceSelectionToggled(boolean isSelected) {
-                Log.d(TAG, "selection=" + isSelected);
+                LumosLog.d(TAG, "selection=" + isSelected);
                 pendingCommandType = Result.CommandType.DEVICE_SELECTION_TOGGLED;
                 pendingCommandDetail = "selected=" + isSelected;
             }
             @Override public void onDevicePowerToggled() {
-                Log.d(TAG, "power toggled");
+                LumosLog.d(TAG, "power toggled");
                 pendingCommandType = Result.CommandType.DEVICE_POWER_TOGGLED;
                 pendingCommandDetail = "power_toggle";
             }
             @Override public void onDeviceModeApplied(float modeValue) {
-                Log.d(TAG, "mode=" + modeValue);
+                LumosLog.d(TAG, "mode=" + modeValue);
                 pendingCommandType = Result.CommandType.DEVICE_MODE_APPLIED;
                 pendingCommandDetail = "mode=" + modeValue;
             }
@@ -93,13 +91,13 @@ public class Lumos {
             d.updateRelativeCoordinate(currentPosition);
             devices.add(d);
             sequence++;
-            Log.d(TAG, "registerDevice -> id=" + id + ", name=" + deviceName + ", type=" + deviceType
+            LumosLog.d(TAG, "registerDevice -> id=" + id + ", name=" + deviceName + ", type=" + deviceType
                     + ", pos=" + d.getPosition());
             return d;
         } catch (LumosException e) {
             throw e;
         } catch (Exception e) {
-            Log.e(TAG, "registerDevice failed", e);
+            LumosLog.e(TAG, "registerDevice failed", e);
             throw new LumosException("registerDevice failed", e);
         }
     }
@@ -199,7 +197,7 @@ public class Lumos {
 
     /** 하위호환 초기화 */
     public void initialize() {
-        Log.d(TAG, "initialize() called without context. MediaPipe disabled until initialize(context) called.");
+        LumosLog.d(TAG, "initialize() called without context. MediaPipe disabled until initialize(context) called.");
         initialized = true;
     }
 
@@ -208,7 +206,7 @@ public class Lumos {
         armVectorEngine.setVectorResultListener(this::onArmVectorReady);
         armVectorEngine.initialize(context.getApplicationContext(), modelAssetPath);
         initialized = true;
-        Log.d(TAG, "MediaPipe initialized");
+        LumosLog.d(TAG, "MediaPipe initialized");
     }
 
     public void startIoTControlProcess() {
