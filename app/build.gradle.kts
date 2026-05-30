@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.android.library)
 }
 
 android {
@@ -11,12 +11,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "io.github.adulescentia.LUMOS_lib"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -50,5 +46,11 @@ dependencies {
     implementation(AndroidX.appCompat)
     implementation(Google.android.material)
     implementation("org.joml:joml:_")
+
+    implementation("androidx.camera:camera-core:1.4.2")
+    implementation("androidx.camera:camera-camera2:1.4.2")
+    implementation("androidx.camera:camera-lifecycle:1.4.2")
+    implementation("androidx.camera:camera-view:1.4.2")
+    implementation("com.google.guava:guava:33.2.1-android")
 
 }
