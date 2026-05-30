@@ -61,4 +61,6 @@ dependencies {
     implementation(libs.org.eclipse.paho.client.mqttv3)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.security.crypto)
+    implementation(project(":app"))
+
 }
