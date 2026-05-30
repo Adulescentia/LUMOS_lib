@@ -20,6 +20,7 @@ public class GestureStateManager {
     private Gesture prevGesture = Gesture.UNDEF;
     private boolean isDeviceSelected = false;
     private boolean isTrackingModeActive = false;
+    private boolean readyForAction = true;
 
     private float baseWristY = 0.0f;
     private float currentModeValue = 0.0f;
@@ -44,11 +45,11 @@ public class GestureStateManager {
     }
 
     public void update(Gesture currentGesture, float currentWristY) {
-        boolean isComingFromReadyState = (prevGesture == Gesture.FIST || prevGesture == Gesture.UNDEF);
+        boolean canTriggerGuardedAction = readyForAction && prevGesture != currentGesture;
 
         switch (currentGesture) {
             case ONE_FINGER:
-                if (isComingFromReadyState && prevGesture != Gesture.ONE_FINGER) {
+                if (canTriggerGuardedAction) {
                     isDeviceSelected = !isDeviceSelected;
                     if (isDeviceSelected) {
                         LumosLog.d(TAG, "🎯 [EVENT] 디바이스가 선택(조준 완료) 되었습니다.");
@@ -59,9 +60,7 @@ public class GestureStateManager {
                     if (actionListener != null) {
                         actionListener.onDeviceSelectionToggled(isDeviceSelected);
                     }
-                    if (actionListener != null) {
-                        actionListener.onDeviceSelectionToggled(isDeviceSelected);
-                    }
+                    readyForAction = false;
                 }
                 break;
 
@@ -72,10 +71,11 @@ public class GestureStateManager {
                         actionListener.onDevicePowerToggled();
                     }
                 }
+                readyForAction = false;
                 break;
 
             case V_SIGN:
-                if (isComingFromReadyState && prevGesture != Gesture.V_SIGN) {
+                if (canTriggerGuardedAction) {
                     if (isDeviceSelected) {
                         isTrackingModeActive = !isTrackingModeActive;
 
@@ -87,15 +87,19 @@ public class GestureStateManager {
                             LumosLog.d(TAG, "💾 [MODE] 모드 조절 비활성화. 최종 높이 변화 mode 반영: " + currentModeValue);
                             applyDeviceMode(currentModeValue);
                         }
+                        readyForAction = false;
                     } else {
                         LumosLog.w(TAG, "⚠️ [WARN] 선택된 디바이스가 없어 모드 조절을 시작할 수 없습니다.");
+                        readyForAction = false;
                     }
                 }
                 break;
 
             case FIST:
             case UNDEF:
+                readyForAction = true;
                 break;
+
         }
 
         if (isTrackingModeActive) {
