@@ -29,3 +29,4 @@ dependencyResolutionManagement {
 rootProject.name = "LUMOS_lib"
 include(":app")
 include(":lumosapp")
+include(":lumoslib")
