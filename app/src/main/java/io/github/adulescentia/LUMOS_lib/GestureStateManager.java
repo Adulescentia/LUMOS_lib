@@ -59,6 +59,9 @@ public class GestureStateManager {
                     if (actionListener != null) {
                         actionListener.onDeviceSelectionToggled(isDeviceSelected);
                     }
+                    if (actionListener != null) {
+                        actionListener.onDeviceSelectionToggled(isDeviceSelected);
+                    }
                 }
                 break;
 
