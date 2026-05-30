@@ -5,4 +5,8 @@ public class InvalidInputErr extends LumosException {
     public InvalidInputErr(String message) {
         super(message);
     }
+
+    public InvalidInputErr(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

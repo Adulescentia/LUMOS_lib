@@ -15,7 +15,6 @@ import org.joml.Vector3f;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
@@ -23,9 +22,11 @@ import java.util.function.Consumer;
 public class Lumos {
     private static final String TAG = "Lumos";
     private static volatile Lumos instance;
+    private static final String DEVICE_SERIALIZATION_VERSION = "LUMOS_DEVICE_V1";
+    private static final char DEVICE_FIELD_SEPARATOR = '|';
+    private static final int DEVICE_FIELD_COUNT = 7;
 
     private final List<Device> devices = new CopyOnWriteArrayList<>();
-    private final Random random = new Random();
     private final GestureStateManager gestureStateManager = new GestureStateManager();
     private final MediaPipeArmVectorEngine armVectorEngine = new MediaPipeArmVectorEngine();
 
@@ -107,6 +108,85 @@ public class Lumos {
         return new ArrayList<>(devices);
     }
 
+
+    /**
+     * 현재 Lumos에 등록된 디바이스 목록을 문자열 배열로 직렬화합니다.
+     *
+     * <p>각 문자열은 내부 버전, id, name, type, x, y, z를 포함합니다.
+     * name/type/id에 구분자나 줄바꿈이 들어와도 복원할 수 있도록 자체 escape를 적용합니다.</p>
+     *
+     * @return 등록된 디바이스를 저장/전송 가능한 문자열 배열로 변환한 값
+     */
+    @NonNull
+    public String[] serializeDevices() {
+        List<String> serialized = new ArrayList<>();
+        for (Device device : devices) {
+            Vector3f position = device.getPosition();
+            serialized.add(DEVICE_SERIALIZATION_VERSION
+                    + DEVICE_FIELD_SEPARATOR + escapeDeviceField(device.getId())
+                    + DEVICE_FIELD_SEPARATOR + escapeDeviceField(device.getName())
+                    + DEVICE_FIELD_SEPARATOR + escapeDeviceField(device.getType())
+                    + DEVICE_FIELD_SEPARATOR + position.x
+                    + DEVICE_FIELD_SEPARATOR + position.y
+                    + DEVICE_FIELD_SEPARATOR + position.z);
+        }
+        return serialized.toArray(new String[0]);
+    }
+
+    /**
+     * 문자열 배열로 저장된 디바이스 목록을 Device 배열로 역직렬화하고 현재 Lumos 디바이스 목록에 반영합니다.
+     *
+     * <p>모든 문자열을 먼저 검증/파싱한 뒤 한 번에 교체하므로, 중간에 오류가 나도 기존 목록은 유지됩니다.</p>
+     *
+     * @param serializedDevices {@link #serializeDevices()}가 반환한 문자열 배열
+     * @return 복원된 Device 배열
+     */
+    @NonNull
+    public synchronized Device[] deserializeDevices(@NonNull String[] serializedDevices) {
+        if (!initialized) throw new NotInitializedErr("Call initialize() before deserializeDevices()");
+        if (serializedDevices == null) {
+            throw new InvalidInputErr("serializedDevices must not be null");
+        }
+
+        List<Device> parsedDevices = new ArrayList<>();
+        int nextSequence = sequence;
+        for (int i = 0; i < serializedDevices.length; i++) {
+            String serializedDevice = serializedDevices[i];
+            if (serializedDevice == null || serializedDevice.trim().isEmpty()) {
+                throw new InvalidInputErr("serializedDevices[" + i + "] must not be null/blank");
+            }
+
+            String[] fields = splitEscapedDeviceFields(serializedDevice);
+            if (fields.length != DEVICE_FIELD_COUNT) {
+                throw new InvalidInputErr("serializedDevices[" + i + "] has invalid field count");
+            }
+            if (!DEVICE_SERIALIZATION_VERSION.equals(fields[0])) {
+                throw new InvalidInputErr("serializedDevices[" + i + "] has unsupported version: " + fields[0]);
+            }
+
+            String id = unescapeDeviceField(fields[1]);
+            String name = unescapeDeviceField(fields[2]);
+            String type = unescapeDeviceField(fields[3]);
+            if (id.trim().isEmpty()) throw new InvalidInputErr("Device id must not be blank");
+            if (name.trim().isEmpty()) throw new InvalidInputErr("Device name must not be blank");
+            if (type.trim().isEmpty()) throw new InvalidInputErr("Device type must not be blank");
+
+            float x = parseFiniteFloat(fields[4], "x", i);
+            float y = parseFiniteFloat(fields[5], "y", i);
+            float z = parseFiniteFloat(fields[6], "z", i);
+
+            Device device = new Device(id, name, type, new Vector3f(x, y, z));
+            device.updateRelativeCoordinate(currentPosition);
+            parsedDevices.add(device);
+            nextSequence = Math.max(nextSequence, getNextSequenceAfter(id));
+        }
+
+        devices.clear();
+        devices.addAll(parsedDevices);
+        sequence = Math.max(sequence, nextSequence);
+        return parsedDevices.toArray(new Device[0]);
+    }
+
     public void registerUIUpdater(Consumer<Image> uiUpdateCallback) {
         if (uiUpdateCallback == null) throw new InvalidInputErr("uiUpdateCallback must not be null");
         this.uiUpdater = uiUpdateCallback;
@@ -158,6 +238,91 @@ public class Lumos {
 
         if (resultChannel != null) resultChannel.accept(latestResult.clone());
         if (uiUpdater != null) uiUpdater.accept(null);
+    }
+
+
+    private static String escapeDeviceField(String field) {
+        if (field == null) throw new InvalidInputErr("Device field must not be null");
+        StringBuilder escaped = new StringBuilder(field.length());
+        for (int i = 0; i < field.length(); i++) {
+            char c = field.charAt(i);
+            switch (c) {
+                case '\\': escaped.append("\\\\"); break;
+                case '|': escaped.append("\\|"); break;
+                case '\n': escaped.append("\\n"); break;
+                case '\r': escaped.append("\\r"); break;
+                default: escaped.append(c); break;
+            }
+        }
+        return escaped.toString();
+    }
+
+    private static String unescapeDeviceField(String field) {
+        StringBuilder unescaped = new StringBuilder(field.length());
+        boolean escaping = false;
+        for (int i = 0; i < field.length(); i++) {
+            char c = field.charAt(i);
+            if (escaping) {
+                switch (c) {
+                    case 'n': unescaped.append('\n'); break;
+                    case 'r': unescaped.append('\r'); break;
+                    case '|': unescaped.append('|'); break;
+                    case '\\': unescaped.append('\\'); break;
+                    default: unescaped.append(c); break;
+                }
+                escaping = false;
+            } else if (c == '\\') {
+                escaping = true;
+            } else {
+                unescaped.append(c);
+            }
+        }
+        if (escaping) unescaped.append('\\');
+        return unescaped.toString();
+    }
+
+    private static String[] splitEscapedDeviceFields(String serializedDevice) {
+        List<String> fields = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        boolean escaping = false;
+        for (int i = 0; i < serializedDevice.length(); i++) {
+            char c = serializedDevice.charAt(i);
+            if (escaping) {
+                current.append('\\').append(c);
+                escaping = false;
+            } else if (c == '\\') {
+                escaping = true;
+            } else if (c == DEVICE_FIELD_SEPARATOR) {
+                fields.add(current.toString());
+                current.setLength(0);
+            } else {
+                current.append(c);
+            }
+        }
+        if (escaping) current.append('\\');
+        fields.add(current.toString());
+        return fields.toArray(new String[0]);
+    }
+
+    private static float parseFiniteFloat(String value, String axis, int index) {
+        try {
+            float parsed = Float.parseFloat(value);
+            if (Float.isNaN(parsed) || Float.isInfinite(parsed)) {
+                throw new InvalidInputErr("serializedDevices[" + index + "] " + axis + " must be finite");
+            }
+            return parsed;
+        } catch (NumberFormatException e) {
+            throw new InvalidInputErr("serializedDevices[" + index + "] " + axis + " is not a valid number", e);
+        }
+    }
+
+    private static int getNextSequenceAfter(String id) {
+        if (id == null || !id.startsWith("DEV_")) return 1;
+        try {
+            return Integer.parseInt(id.substring(4)) + 1;
+        } catch (NumberFormatException e) {
+            return 1;
+        }
     }
 
     @Nullable

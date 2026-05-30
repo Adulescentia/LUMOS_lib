@@ -1,6 +1,6 @@
 # LUMOS_lib
 
-LUMOS_lib는 **MediaPipe 기반 팔 방향(arm vector) 추정 + 디바이스 선택/제어 파이프라인**을 제공하는 안드로이드 라이브러리입니다.  
+LUMOS_lib는 **MediaPipe 기반 팔 방향(arm vector) 추정 + 디바이스 선택/제어 파이프라인**을 제공하는 안드로이드 라이브러리입니다.
 이 문서는 현재 코드 기준으로 라이브러리의 기능, 구조, 사용 방법, **유저 세이프티(안전한 오류 처리) 정책**까지 자세히 설명합니다.
 
 ---
@@ -58,6 +58,13 @@ LUMOS_lib는 다음 문제를 해결하기 위한 라이브러리입니다.
 - `registerExternalResultChannel(...)`로 결과 수신 콜백 등록
 - `getLatestResultSnapshot()`으로 최신 결과를 안전하게 복사(clone) 조회
 
+### 2-6. 디바이스 직렬화/역직렬화
+
+- `serializeDevices()`로 현재 등록된 디바이스 목록을 `String[]` 형태로 저장/전송할 수 있습니다.
+- `deserializeDevices(String[] serializedDevices)`로 저장된 문자열 배열을 다시 `Device[]`로 복원하고, Lumos 내부 디바이스 목록에도 반영합니다.
+- 디바이스 이름/타입/id에 구분자(`|`)나 줄바꿈이 들어가도 복원 가능하도록 내부 escape 포맷을 사용합니다.
+- 역직렬화 입력이 잘못된 경우 `InvalidInputErr`를 던지며, 기존 디바이스 목록은 유지됩니다.
+
 ---
 
 ## 3) 유저 세이프티(안전한 오류 처리) 정책
@@ -66,11 +73,11 @@ LUMOS_lib는 런타임 실패 시 `NullPointerException` 같은 모호한 오류
 
 ### 3-1. 핵심 예외 타입
 
-- `NotInitializedErr`  
+- `NotInitializedErr`
   초기화(`initialize`) 이전에 처리 함수 호출 시 발생
-- `InvalidInputErr`  
+- `InvalidInputErr`
   파라미터가 null/blank/비정상 값(예: NaN 좌표)일 때 발생
-- `LumosException`  
+- `LumosException`
   라이브러리 내부 처리 실패를 포괄하는 상위 예외
 
 ### 3-2. 어떤 경우에 발생하나
@@ -79,6 +86,8 @@ LUMOS_lib는 런타임 실패 시 `NullPointerException` 같은 모호한 오류
 - `ingestExternalCameraFrame(...)`를 초기화 없이 호출 → `NotInitializedErr`
 - `updateGesture(null, ...)` 호출 → `InvalidInputErr`
 - `registerDevice(...)`에 빈 이름/타입 또는 비정상 좌표 전달 → `InvalidInputErr`
+- `deserializeDevices(...)`에 null/빈 항목/깨진 포맷/비정상 좌표 전달 → `InvalidInputErr`
+- `deserializeDevices(...)`를 초기화 없이 호출 → `NotInitializedErr`
 - 콜백 등록 함수에 null 콜백 전달 → `InvalidInputErr`
 
 ### 3-3. 호스트 앱 권장 처리 패턴
@@ -119,6 +128,10 @@ lumos.initialize(context, "pose_landmarker_full.task");
 lumos.registerDevice(0.0, 1.2, 4.0, "LivingRoom TV", "DISPLAY");
 lumos.registerDevice(2.5, 1.0, 3.5, "Standing Lamp", "LIGHT");
 
+// 2-1) 디바이스 목록 저장/복원 예시
+String[] savedDevices = lumos.serializeDevices();
+Device[] restoredDevices = lumos.deserializeDevices(savedDevices);
+
 // 3) 결과 콜백 등록
 lumos.registerExternalResultChannel(result -> {
     Vector3f dir = result.getDirection();
@@ -144,40 +157,46 @@ lumos.shutdown();
 
 ## `Lumos`
 
-- `static Lumos getInstance()`  
+- `static Lumos getInstance()`
   싱글톤 인스턴스 획득
 
-- `@Nullable Device registerDevice(double x, double y, double z, String deviceName, String deviceType)`  
+- `@Nullable Device registerDevice(double x, double y, double z, String deviceName, String deviceType)`
   호스트가 제공한 좌표/이름/타입으로 디바이스 등록 후 반환
 
-- `Collection<Device> getDeviceList()`  
+- `Collection<Device> getDeviceList()`
   등록된 디바이스 목록 반환
 
-- `void registerUIUpdater(Consumer<Image> uiUpdateCallback)`  
+- `String[] serializeDevices()`
+  현재 등록된 디바이스 목록을 저장/전송 가능한 문자열 배열로 직렬화
+
+- `Device[] deserializeDevices(String[] serializedDevices)`
+  문자열 배열을 검증 후 Device 배열로 복원하고 내부 디바이스 목록을 교체
+
+- `void registerUIUpdater(Consumer<Image> uiUpdateCallback)`
   UI 프레임 채널 콜백 등록
 
-- `void registerExternalResultChannel(Consumer<Result> resultConsumer)`  
+- `void registerExternalResultChannel(Consumer<Result> resultConsumer)`
   결과 콜백 채널 등록
 
-- `void initialize()`  
+- `void initialize()`
   호환용/시뮬레이션 초기화
 
-- `void initialize(Context context, String modelAssetPath)`  
+- `void initialize(Context context, String modelAssetPath)`
   실사용 MediaPipe 초기화
 
-- `void startIoTControlProcess()`  
+- `void startIoTControlProcess()`
   파이프라인 시작(호스트 프레임 입력 전제)
 
-- `void ingestExternalCameraFrame(MPImage mpImage, long timestampMs)`  
+- `void ingestExternalCameraFrame(MPImage mpImage, long timestampMs)`
   외부 카메라 프레임 입력
 
-- `void updateGesture(GestureStateManager.Gesture gesture, float wristY)`  
+- `void updateGesture(GestureStateManager.Gesture gesture, float wristY)`
   제스처 상태 업데이트
 
-- `Result getLatestResultSnapshot()`  
+- `Result getLatestResultSnapshot()`
   최신 결과 복사본 획득
 
-- `void shutdown()`  
+- `void shutdown()`
   엔진 정리 및 종료
 
 ## `Result`
@@ -239,6 +258,7 @@ lumos.shutdown();
 - [ ] MediaPipe 모델 파일(asset) 포함 여부
 - [ ] 카메라 권한/프레임 변환 경로 점검
 - [ ] 디바이스 좌표계(월드 좌표 기준) 정의 완료
+- [ ] 디바이스 저장/복원 시 `serializeDevices()` / `deserializeDevices(...)` 사용
 - [ ] 예외 처리(NotInitializedErr/InvalidInputErr/LumosException) 구현
 - [ ] 결과 콜백에서 UI 스레드 전환 처리
 - [ ] 앱 종료 시 `shutdown()` 호출
