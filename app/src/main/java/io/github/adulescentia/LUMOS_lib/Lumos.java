@@ -74,7 +74,7 @@ public class Lumos {
                                               @NonNull String deviceName,
                                               @NonNull String deviceType) {
         try {
-            if (!initialized) throw new NotInitializedErr("Call initialize() before registerDevice()");
+            ensureInitialized("registerDevice");
             if (Double.isNaN(x) || Double.isNaN(y) || Double.isNaN(z)
                     || Double.isInfinite(x) || Double.isInfinite(y) || Double.isInfinite(z)) {
                 throw new InvalidInputErr("Device coordinates must be finite numbers");
@@ -141,7 +141,7 @@ public class Lumos {
      */
     @NonNull
     public synchronized Device[] deserializeDevices(@NonNull String[] serializedDevices) {
-        if (!initialized) throw new NotInitializedErr("Call initialize() before deserializeDevices()");
+        ensureInitialized("deserializeDevices");
         if (serializedDevices == null) {
             throw new InvalidInputErr("serializedDevices must not be null");
         }
@@ -210,19 +210,25 @@ public class Lumos {
     }
 
     public void startIoTControlProcess() {
-        if (!initialized) throw new NotInitializedErr("Call initialize() first");
+        ensureInitialized("startIoTControlProcess");
         // host-driven: ingestExternalCameraFrame() 호출로 실제 처리 시작
     }
 
     public void ingestExternalCameraFrame(@NonNull MPImage mpImage, long timestampMs) {
-        if (!initialized) throw new NotInitializedErr("Call initialize() first");
+        ensureInitialized("ingestExternalCameraFrame");
         armVectorEngine.processFrame(mpImage, timestampMs);
     }
 
     public void updateGesture(@NonNull GestureStateManager.Gesture gesture, float wristY) {
-        if (!initialized) throw new NotInitializedErr("Call initialize() first");
+        ensureInitialized("updateGesture");
         if (gesture == null) throw new InvalidInputErr("gesture must not be null");
         gestureStateManager.update(gesture, wristY);
+    }
+
+    private void ensureInitialized(@NonNull String apiName) {
+        if (!initialized) {
+            throw new NotInitializedErr(apiName + " requires initialize() before use");
+        }
     }
 
     private void onArmVectorReady(@NonNull Vector3f armVector, @Nullable PoseLandmarkerResult raw, long ts) {
