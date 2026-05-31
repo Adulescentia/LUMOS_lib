@@ -9,7 +9,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LUMOS_lib">
         <activity
-            android:name=".LUMOS"
+            android:name=".LumosDemoActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.LUMOS_lib">
