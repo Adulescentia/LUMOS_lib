@@ -6,7 +6,7 @@ android {
     namespace = "io.github.adulescentia.LUMOS_lib"
     compileSdk {
         version = release(36) {
-            minorApiLevel = 28
+            minorApiLevel = 1
         }
     }
 
@@ -40,16 +40,14 @@ dependencies {
 
     //additional
 
-    implementation(libs.tasks.vision)
-    implementation(libs.ejml.all)
-    implementation(AndroidX.appCompat)
-    implementation(Google.android.material)
-    api(libs.joml)
+    implementation("com.google.mediapipe:tasks-vision:0.10.35")
+    implementation("org.joml:joml:1.10.8")
 
-    implementation(libs.androidx.camera.core)
-    implementation(libs.androidx.camera.camera2)
-    implementation(libs.androidx.camera.lifecycle)
-    implementation(libs.androidx.camera.view)
-    implementation(libs.guava)
+    implementation("androidx.lifecycle:lifecycle-runtime:2.10.0")
+    implementation("androidx.camera:camera-core:1.4.2")
+    implementation("androidx.camera:camera-camera2:1.4.2")
+    implementation("androidx.camera:camera-lifecycle:1.4.2")
+    implementation("androidx.camera:camera-view:1.4.2")
+    implementation("com.google.guava:guava:33.2.1-android")
 
 }
