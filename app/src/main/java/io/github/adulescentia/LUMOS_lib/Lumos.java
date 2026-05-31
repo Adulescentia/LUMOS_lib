@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.mediapipe.framework.image.MPImage;
+import com.google.mediapipe.tasks.vision.gesturerecognizer.GestureRecognizerResult;
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
 
 import org.joml.Vector3f;
@@ -203,8 +204,16 @@ public class Lumos {
 
     /** 실사용 초기화 */
     public void initialize(@NonNull Context context, @NonNull String modelAssetPath) {
+        initialize(context, modelAssetPath, null);
+    }
+
+    /** 실사용 초기화: PoseLandmarker + GestureRecognizer 동시 사용 */
+    public void initialize(@NonNull Context context,
+                           @NonNull String poseModelAssetPath,
+                           @Nullable String gestureModelAssetPath) {
         armVectorEngine.setVectorResultListener(this::onArmVectorReady);
-        armVectorEngine.initialize(context.getApplicationContext(), modelAssetPath);
+        armVectorEngine.setGestureResultListener(this::onGestureReady);
+        armVectorEngine.initialize(context.getApplicationContext(), poseModelAssetPath, gestureModelAssetPath);
         initialized = true;
         LumosLog.d(TAG, "MediaPipe initialized");
     }
@@ -242,6 +251,14 @@ public class Lumos {
 
         if (resultChannel != null) resultChannel.accept(latestResult.clone());
         if (uiUpdater != null) uiUpdater.accept(null);
+    }
+
+
+    private void onGestureReady(@NonNull GestureStateManager.Gesture gesture,
+                                float wristY,
+                                @Nullable GestureRecognizerResult raw,
+                                long ts) {
+        gestureStateManager.update(gesture, wristY);
     }
 
 

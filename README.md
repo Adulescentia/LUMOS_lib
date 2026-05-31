@@ -43,13 +43,15 @@ LUMOS_lib는 다음 문제를 해결하기 위한 라이브러리입니다.
 
 ### 2-3. MediaPipe 처리 파이프라인
 
-- `initialize(context, modelAssetPath)`로 MediaPipe 엔진 초기화
+- `initialize(context, modelAssetPath)`로 PoseLandmarker 기반 MediaPipe 엔진 초기화
+- `initialize(context, poseModelAssetPath, gestureModelAssetPath)`로 PoseLandmarker와 GestureRecognizer를 함께 초기화
 - `ingestExternalCameraFrame(mpImage, timestamp)`로 프레임 입력
-- 프레임마다 arm vector 계산 후 `Result` 업데이트 + 외부 콜백 전달
+- 프레임마다 arm vector 계산, 제스처 인식 결과를 `GestureStateManager`에 반영 후 `Result` 업데이트 + 외부 콜백 전달
 
 ### 2-4. 제스처 상태 관리
 
 - `GestureStateManager`에서 FIST/PALM/ONE_FINGER/V_SIGN/UNDEF 제스처 기반 상태 전이 수행
+- GestureRecognizer 모델을 함께 초기화한 경우 `Closed_Fist`, `Open_Palm`, `Pointing_Up`, `Victory` 결과를 각각 FIST/PALM/ONE_FINGER/V_SIGN으로 매핑
 - 선택 토글, 전원 토글, 모드 적용 이벤트를 `ActionListener`로 외부에 제공
 - 이벤트는 `Result`의 command 정보와 함께 전달될 수 있어, 호스트 앱이 즉시 액션 라우팅 가능
 
@@ -182,7 +184,10 @@ lumos.shutdown();
   호환용/시뮬레이션 초기화
 
 - `void initialize(Context context, String modelAssetPath)`
-  실사용 MediaPipe 초기화
+  PoseLandmarker만 사용하는 실사용 MediaPipe 초기화
+
+- `void initialize(Context context, String poseModelAssetPath, String gestureModelAssetPath)`
+  PoseLandmarker와 GestureRecognizer를 함께 사용하는 실사용 MediaPipe 초기화
 
 - `void startIoTControlProcess()`
   파이프라인 시작(호스트 프레임 입력 전제)
@@ -229,7 +234,8 @@ lumos.shutdown();
 ## 7) 현재 제약사항 및 주의점
 
 1. MediaPipe 모델 파일이 앱 assets에 있어야 합니다.
-   - 예: `pose_landmarker_full.task`
+   - Pose만 사용할 때: `pose_landmarker_full.task`
+   - 제스처까지 자동 인식할 때: `pose_landmarker_full.task` + `gesture_recognizer.task`
 
 2. 호스트 앱에서 카메라 프레임을 `MPImage`로 변환해 입력해야 합니다.
    - CameraX/Camera2 연동은 호스트 앱 책임입니다.
@@ -244,7 +250,7 @@ lumos.shutdown();
 
 ## 8) 권장 운영 패턴
 
-- 앱 시작 시 1회 `initialize(context, modelAssetPath)`
+- 앱 시작 시 1회 `initialize(context, modelAssetPath)` 또는 `initialize(context, poseModelAssetPath, gestureModelAssetPath)`
 - 초기화 성공 후 디바이스 등록
 - 화면 진입/카메라 시작 시 `startIoTControlProcess()`
 - 프레임마다 `ingestExternalCameraFrame(...)`
@@ -255,7 +261,7 @@ lumos.shutdown();
 
 ## 9) 통합 체크리스트 (실사용 전)
 
-- [ ] MediaPipe 모델 파일(asset) 포함 여부
+- [ ] MediaPipe 모델 파일(asset) 포함 여부 (`pose_landmarker_full.task`, 제스처 자동 인식 시 `gesture_recognizer.task` 포함)
 - [ ] 카메라 권한/프레임 변환 경로 점검
 - [ ] 디바이스 좌표계(월드 좌표 기준) 정의 완료
 - [ ] 디바이스 저장/복원 시 `serializeDevices()` / `deserializeDevices(...)` 사용
@@ -296,4 +302,4 @@ lumos.shutdown();
 - `startIoTControlProcess()` 및 `getLatestResultSnapshot()` 호출
 - `ONE_FINGER`, `FIST`, `PALM`, `V_SIGN` 제스처 입력
 
-`lumoslib`는 테스트 앱이 라이브러리를 의존성처럼 사용할 수 있도록 기존 `app/src/main/java`를 source set으로 참조합니다. 따라서 기존 라이브러리/앱 코드를 직접 변경하지 않고 테스트 앱만 교체해 동작을 확인할 수 있습니다. 실제 카메라 프레임 처리 검증은 호스트 앱에서 `initialize(context, modelAssetPath)`와 `ingestExternalCameraFrame(...)`을 연결해 진행하세요.
+`lumoslib`는 테스트 앱이 라이브러리를 의존성처럼 사용할 수 있도록 기존 `app/src/main/java`를 source set으로 참조합니다. 따라서 기존 라이브러리/앱 코드를 직접 변경하지 않고 테스트 앱만 교체해 동작을 확인할 수 있습니다. 실제 카메라 프레임 처리 검증은 호스트 앱에서 `initialize(context, modelAssetPath)` 또는 `initialize(context, poseModelAssetPath, gestureModelAssetPath)`와 `ingestExternalCameraFrame(...)`을 연결해 진행하세요.
