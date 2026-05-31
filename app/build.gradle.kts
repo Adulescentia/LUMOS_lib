@@ -40,10 +40,12 @@ dependencies {
 
     //additional
 
-    implementation("com.google.mediapipe:tasks-vision:0.10.35")
-    implementation("org.joml:joml:1.10.8")
+    implementation("com.google.mediapipe:tasks-vision:_")
+    implementation("org.ejml:ejml-all:_")
+    implementation(AndroidX.appCompat)
+    implementation(Google.android.material)
+    implementation("org.joml:joml:_")
 
-    implementation("androidx.lifecycle:lifecycle-runtime:2.10.0")
     implementation("androidx.camera:camera-core:1.4.2")
     implementation("androidx.camera:camera-camera2:1.4.2")
     implementation("androidx.camera:camera-lifecycle:1.4.2")
