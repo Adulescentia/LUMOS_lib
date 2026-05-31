@@ -4,11 +4,11 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class LumosLibraryTest {
+public class LumosImplLibraryTest {
 
     @Test
     public void registerDeviceAndGetDeviceList() {
-        Lumos lumos = Lumos.getInstance();
+        LumosImpl lumos = LumosImpl.getInstance();
         lumos.initialize();
         Device d = lumos.registerDevice(0.0, 1.0, 4.0, "TV", "DISPLAY");
         assertNotNull(d);
@@ -17,7 +17,7 @@ public class LumosLibraryTest {
 
     @Test
     public void startIoTControlProcessRequiresInitialize() {
-        Lumos lumos = Lumos.getInstance();
+        LumosImpl lumos = LumosImpl.getInstance();
         lumos.initialize();
         lumos.startIoTControlProcess();
         assertNotNull(lumos.getLatestResultSnapshot());
@@ -25,7 +25,7 @@ public class LumosLibraryTest {
 
     @Test
     public void notInitializedThrowsSpecificErr() {
-        Lumos lumos = Lumos.getInstance();
+        LumosImpl lumos = LumosImpl.getInstance();
         lumos.shutdown();
         try {
             lumos.startIoTControlProcess();
@@ -37,7 +37,7 @@ public class LumosLibraryTest {
 
     @Test
     public void serializeAndDeserializeDevicesRoundTrip() {
-        Lumos lumos = Lumos.getInstance();
+        LumosImpl lumos = LumosImpl.getInstance();
         lumos.initialize();
         lumos.deserializeDevices(new String[0]);
 
@@ -57,7 +57,7 @@ public class LumosLibraryTest {
 
     @Test
     public void deserializeDevicesRejectsMalformedInputWithoutClearingExistingDevices() {
-        Lumos lumos = Lumos.getInstance();
+        LumosImpl lumos = LumosImpl.getInstance();
         lumos.initialize();
         lumos.deserializeDevices(new String[0]);
         lumos.registerDevice(0.0, 1.0, 2.0, "Safe Device", "LIGHT");

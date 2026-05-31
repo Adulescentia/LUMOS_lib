@@ -1,6 +1,7 @@
 package io.github.adulescentia.lumosapp
 
 import android.R
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,6 +59,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -84,7 +86,10 @@ fun Home() {
     // 로딩 상태 관리
     var isLoading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-
+    val context = LocalContext.current
+    val sharedPref = remember {
+        context.getSharedPreferences("IoT_Prefs", Context.MODE_PRIVATE)
+    }
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -159,7 +164,11 @@ fun Home() {
                 onClick = {
                     isLoading = true
                     scope.launch {
-                        delay(2000) // 실제로는 네트워크 통신 로직이 들어갑니다.
+                        delay(2000) //TODO NETWORK CHECK
+                        val mqttAcc = LumosExtended.MqttAccount(password,username)
+                        MqttPublisher(serverUri = cloudUrl,context)
+                        LumosExtended.saveMqttAccount(mqttAcc)
+                        
                         isLoading = false
                     }
                 },
@@ -181,31 +190,32 @@ fun Home() {
                 }
             }
         }
-
-        // 2. 전체 화면 로딩 오버레이 (선택 사항)
-//        if (isLoading) {
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .background(Color.Black.copy(alpha = 0.3f)) // 뒤를 어둡게
-//                    .pointerInput(Unit) {}, // 클릭 방지
-//                contentAlignment = Alignment.Center
-//            ) {
-//                Card(
-//                    shape = RoundedCornerShape(16.dp),
-//                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-//                ) {
-//                    Column(
-//                        modifier = Modifier.padding(32.dp),
-//                        horizontalAlignment = Alignment.CenterHorizontally
-//                    ) {
-//                        CircularProgressIndicator()
-//                        Spacer(Modifier.height(16.dp))
-//                        Text("서버에 접속 중...", style = MaterialTheme.typography.labelLarge)
-//                    }
-//                }
-//            }
-//        }
+    }
+}
+@Preview
+@Composable
+@Deprecated("of no use")
+fun a(){
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.3f)) // 뒤를 어둡게
+            .pointerInput(Unit) {}, // 클릭 방지
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Column(
+                modifier = Modifier.padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator()
+                Spacer(Modifier.height(16.dp))
+                Text("서버에 접속 중...", style = MaterialTheme.typography.labelLarge)
+            }
+        }
     }
 }
 

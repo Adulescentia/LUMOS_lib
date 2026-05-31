@@ -9,7 +9,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
-    private Lumos lumos;
+    private LumosImpl lumos;
     private TextView stateText;
     private TextView logText;
     private ScrollView logScroll;
@@ -24,7 +24,7 @@ public class MainActivity extends AppCompatActivity {
             logText = findViewById(R.id.logText);
             logScroll = findViewById(R.id.logScroll);
 
-            lumos = Lumos.getInstance();
+            lumos = LumosImpl.getInstance();
             lumos.initialize();
             lumos.registerExternalResultChannel(result -> runOnUiThread(() -> {
                 String selected = "none";

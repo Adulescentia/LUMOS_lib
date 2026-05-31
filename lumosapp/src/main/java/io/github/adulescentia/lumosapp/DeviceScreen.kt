@@ -33,9 +33,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,21 +51,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.adulescentia.LUMOS_lib.Device
-import io.github.adulescentia.LUMOS_lib.Lumos
+import io.github.adulescentia.LUMOS_lib.LumosImpl
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Preview(name = "gg")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DeviceScreen(){
-    Lumos.getInstance().initialize()
+fun DeviceScreen(
+    deviceViewModel: DeviceViewModel = viewModel()
+){
     var showDeviceAddModal by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(true)
     // Lumos 인스턴스에서 디바이스 목록을 가져옵니다.
-    val devices = remember { Lumos.getInstance().deviceList }
-
+    val devices by deviceViewModel.devices.collectAsState()
+    val isLoading by deviceViewModel.isLoading.collectAsState()
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = { showDeviceAddModal = true }) {
@@ -73,29 +76,43 @@ fun DeviceScreen(){
         }
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally
+            PullToRefreshBox(
+                isRefreshing = isLoading,
+                onRefresh = {
+                    deviceViewModel.fetchDevicesFromBackend()
+                },
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize()
             ) {
-                // 디바이스 목록이 비어있을 때의 처리를 추가하여 'List is empty' 관련 렌더링 오류를 방지합니다.
-                if (devices.isEmpty()) {
-                    item {
-                        Text(
-                            text = "등록된 기기가 없습니다.",
-                            modifier = Modifier.padding(top = 100.dp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                } else {
-                    items(devices.toList()) { device ->
-                        DeviceItem(device)
-                    }
+                DeviceList(devices)
+                if (showDeviceAddModal) {
+                    DeviceAddScreen({ showDeviceAddModal = false; deviceViewModel.fetchDevicesFromBackend() }, sheetState)
                 }
             }
         }
-        if (showDeviceAddModal) {
-            DeviceAddScreen({ showDeviceAddModal = false }, sheetState)
+    }
+}
+@Composable
+fun DeviceList(devices : List<Device>){
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // 디바이스 목록이 비어있을 때의 처리를 추가하여 'List is empty' 관련 렌더링 오류를 방지합니다.
+        if (devices.isEmpty()) {
+            item {
+                Text(
+                    text = "등록된 기기가 없습니다.",
+                    modifier = Modifier.padding(top = 100.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+        } else {
+            items(devices.toList()) { device ->
+                DeviceItem(device)
+            }
         }
     }
 }
@@ -279,7 +296,7 @@ fun DeviceAddScreen(onDismissRequest : () -> Unit, sheetState: SheetState) {
                             delay(1500)
 
                             try {
-                                Lumos.getInstance().registerDevice(
+                                LumosImpl.getInstance().registerDevice(
                                     deviceX.toDoubleOrNull() ?: 0.0,
                                     deviceY.toDoubleOrNull() ?: 0.0,
                                     deviceZ.toDoubleOrNull() ?: 0.0,
