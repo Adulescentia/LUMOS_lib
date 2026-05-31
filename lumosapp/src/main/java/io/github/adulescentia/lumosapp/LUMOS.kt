@@ -26,10 +26,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -57,6 +59,10 @@ class LUMOS : ComponentActivity() {
 fun LumosTesterApp() {
     val lumos = remember { Lumos.getInstance() }
     val logs = remember { mutableStateListOf<String>() }
+    val registeredDevices = remember { mutableStateListOf<Device>() }
+    val powerStates = remember { mutableStateMapOf<String, Boolean>() }
+    val modeLevels = remember { mutableStateMapOf<String, Int>() }
+    var selectedDeviceId by rememberSaveable { mutableStateOf<String?>(null) }
     var latestResult by remember { mutableStateOf(Result()) }
     var deviceName by rememberSaveable { mutableStateOf("Living Room TV") }
     var deviceType by rememberSaveable { mutableStateOf("DISPLAY") }
@@ -116,6 +122,11 @@ fun LumosTesterApp() {
                                 deviceType.trim()
                             )
                         }.onSuccess { device ->
+                            if (device != null) {
+                                registeredDevices.add(device)
+                                powerStates.putIfAbsent(device.id, false)
+                                modeLevels.putIfAbsent(device.id, 50)
+                            }
                             appendLog("디바이스 등록: ${device?.summary() ?: "null"}")
                         }.onFailure { error ->
                             appendLog("디바이스 등록 실패: ${error.javaClass.simpleName} - ${error.message}")
@@ -131,6 +142,11 @@ fun LumosTesterApp() {
                             runCatching {
                                 lumos.registerDevice(sample.x, sample.y, sample.z, sample.name, sample.type)
                             }.onSuccess { device ->
+                                if (device != null) {
+                                    registeredDevices.add(device)
+                                    powerStates.putIfAbsent(device.id, false)
+                                    modeLevels.putIfAbsent(device.id, 50)
+                                }
                                 appendLog("샘플 등록: ${device?.summary() ?: "null"}")
                             }.onFailure { error ->
                                 appendLog("샘플 등록 실패(${sample.name}): ${error.message}")
@@ -155,6 +171,13 @@ fun LumosTesterApp() {
                             val serialized = lumos.serializeDevices()
                             lumos.deserializeDevices(serialized).toList()
                         }.onSuccess { devices ->
+                            registeredDevices.clear()
+                            registeredDevices.addAll(devices)
+                            devices.forEach { device ->
+                                powerStates.putIfAbsent(device.id, false)
+                                modeLevels.putIfAbsent(device.id, 50)
+                            }
+                            if (selectedDeviceId !in devices.map { it.id }) selectedDeviceId = null
                             appendLog("역직렬화로 ${devices.size}건 재적재 완료")
                         }.onFailure { error -> appendLog("역직렬화 실패: ${error.message}") }
                     },
@@ -174,8 +197,45 @@ fun LumosTesterApp() {
                     }
                 )
                 StatusCard(
-                    deviceCount = lumos.deviceList.size,
+                    deviceCount = registeredDevices.size,
                     latestResult = latestResult,
+                )
+                SmartHomeControlCard(
+                    devices = registeredDevices,
+                    selectedDeviceId = selectedDeviceId,
+                    powerStates = powerStates,
+                    modeLevels = modeLevels,
+                    onSelect = { device ->
+                        runCatching {
+                            lumos.updateGesture(GestureStateManager.Gesture.FIST, 0.5f)
+                            lumos.updateGesture(GestureStateManager.Gesture.ONE_FINGER, 0.5f)
+                        }.onSuccess {
+                            selectedDeviceId = device.id
+                            appendLog("${device.name} 선택 완료 - LUMOS 제스처 선택 API 호출")
+                        }.onFailure { error -> appendLog("선택 실패: ${error.message}") }
+                    },
+                    onTogglePower = { device ->
+                        runCatching {
+                            lumos.updateGesture(GestureStateManager.Gesture.FIST, 0.5f)
+                            lumos.updateGesture(GestureStateManager.Gesture.PALM, 0.5f)
+                        }.onSuccess {
+                            powerStates[device.id] = !(powerStates[device.id] ?: false)
+                            appendLog("${device.name} 전원 ${if (powerStates[device.id] == true) "ON" else "OFF"} - LUMOS 전원 제스처 API 호출")
+                        }.onFailure { error -> appendLog("전원 변경 실패: ${error.message}") }
+                    },
+                    onChangeMode = { device, delta ->
+                        runCatching {
+                            lumos.updateGesture(GestureStateManager.Gesture.FIST, 0.5f)
+                            lumos.updateGesture(GestureStateManager.Gesture.V_SIGN, 0.5f)
+                            lumos.updateGesture(GestureStateManager.Gesture.V_SIGN, 0.5f - (delta / 100f))
+                            lumos.updateGesture(GestureStateManager.Gesture.FIST, 0.5f - (delta / 100f))
+                            lumos.updateGesture(GestureStateManager.Gesture.V_SIGN, 0.5f - (delta / 100f))
+                        }.onSuccess {
+                            val next = ((modeLevels[device.id] ?: 50) + delta).coerceIn(0, 100)
+                            modeLevels[device.id] = next
+                            appendLog("${device.name} 모드값 $next% - LUMOS 모드 제스처 API 호출")
+                        }.onFailure { error -> appendLog("모드 변경 실패: ${error.message}") }
+                    },
                 )
                 LogCard(logs = logs)
             }
@@ -187,12 +247,12 @@ fun LumosTesterApp() {
 private fun HeaderSection() {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
-            text = "LUMOS 라이브러리 테스트 앱",
+            text = "LUMOS 스마트홈 컨트롤러",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
         )
         Text(
-            text = "디바이스 등록, 직렬화/역직렬화, 제스처 API, 최신 결과 스냅샷을 빠르게 확인할 수 있습니다.",
+            text = "라이브러리 코드는 건드리지 않고 LUMOS API로 IoT 디바이스를 등록·선택·제어하는 데모 앱입니다.",
             style = MaterialTheme.typography.bodyMedium,
         )
     }
@@ -317,6 +377,62 @@ private fun StatusCard(deviceCount: Int, latestResult: Result) {
             SectionTitle("현재 상태")
             Text("등록 디바이스 수: $deviceCount")
             Text("최신 결과: ${latestResult.summary()}")
+        }
+    }
+}
+
+@Composable
+private fun SmartHomeControlCard(
+    devices: List<Device>,
+    selectedDeviceId: String?,
+    powerStates: Map<String, Boolean>,
+    modeLevels: Map<String, Int>,
+    onSelect: (Device) -> Unit,
+    onTogglePower: (Device) -> Unit,
+    onChangeMode: (Device, Int) -> Unit,
+) {
+    Card {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            SectionTitle("스마트홈 제어")
+            if (devices.isEmpty()) {
+                Text("디바이스를 등록하거나 샘플 3개를 추가하면 실제 제어 패널이 활성화됩니다.")
+            } else {
+                devices.forEach { device ->
+                    val isSelected = selectedDeviceId == device.id
+                    val isPowered = powerStates[device.id] == true
+                    val mode = modeLevels[device.id] ?: 50
+                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column {
+                                    Text(device.name, fontWeight = FontWeight.SemiBold)
+                                    Text("${device.type} · ${device.position.format()}")
+                                }
+                                Text(if (isSelected) "선택됨" else "대기")
+                            }
+                            Text("전원: ${if (isPowered) "ON" else "OFF"} · 모드: $mode%")
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(modifier = Modifier.weight(1f), onClick = { onSelect(device) }) { Text("조준") }
+                                Button(modifier = Modifier.weight(1f), onClick = { onTogglePower(device) }) { Text("전원") }
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(modifier = Modifier.weight(1f), onClick = { onChangeMode(device, -10) }) { Text("모드 -") }
+                                Button(modifier = Modifier.weight(1f), onClick = { onChangeMode(device, 10) }) { Text("모드 +") }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
