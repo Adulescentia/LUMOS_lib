@@ -118,7 +118,9 @@ fun Home() {
                 Icon(
                     imageVector = Icons.Default.CloudQueue,
                     contentDescription = null,
-                    modifier = Modifier.padding(16.dp).size(40.dp),
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .size(40.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -165,16 +167,52 @@ fun Home() {
                     isLoading = true
                     scope.launch {
                         delay(2000) //TODO NETWORK CHECK
-                        val mqttAcc = LumosExtended.MqttAccount(password,username)
-                        MqttPublisher(serverUri = cloudUrl,context)
+                        val mqttAcc = LumosExtended.MqttAccount(cloudUrl,port,password,username)
                         LumosExtended.saveMqttAccount(mqttAcc)
-                        
+                        LumosExtended.initializeMqttPublisher(context)
+                        LumosExtended.mqttPublisher.connect()
+                        LumosExtended.mqttPublisher.publish("connected.check", "app")
+                        LumosExtended.mqttPublisher.subscribe("testt") { println("subsub!!!!!!!!! : $it") }
                         isLoading = false
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(58.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(58.dp),
                 shape = RoundedCornerShape(18.dp),
                 enabled = !isLoading && cloudUrl.isNotBlank() && username.isNotBlank(),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+            ) {
+                if (isLoading) {
+                    // 버튼 내부 로딩 스피너
+                    LinearProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        trackColor = ProgressIndicatorDefaults.linearTrackColor,
+                        strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+                    )
+                } else {
+                    Text("계정 저장", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = {
+                    isLoading = true
+                    scope.launch {
+                        delay(2000) //TODO NETWORK CHECK
+                        LumosExtended.initializeMqttPublisher(context)
+                        LumosExtended.mqttPublisher.connect()
+                        LumosExtended.mqttPublisher.publish("connected.check", "app")
+                        LumosExtended.mqttPublisher.subscribe("testt") { println("subsub!!!!!!!!! : $it") }
+                        isLoading = false
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(58.dp),
+                shape = RoundedCornerShape(18.dp),
+                enabled = true,
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
                 if (isLoading) {

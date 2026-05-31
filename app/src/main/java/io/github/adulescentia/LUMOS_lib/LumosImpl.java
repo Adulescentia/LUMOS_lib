@@ -4,6 +4,8 @@ import android.content.Context;
 import android.media.Image;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.camera.core.CameraSelector;
+import androidx.lifecycle.LifecycleOwner;
 
 import com.google.mediapipe.framework.image.MPImage;
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
@@ -16,13 +18,13 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
-
-
-
 /** 실사용 라이브러리 형태의 LUMOS 코어 */
 public class LumosImpl implements Lumos {
     private static final String TAG = "Lumos";
     private static volatile LumosImpl instance;
+    public static final String DEFAULT_POSE_MODEL_ASSET_PATH = "pose_landmarker_full.task";
+    public static final String DEFAULT_GESTURE_MODEL_ASSET_PATH = "gesture_recognizer.task";
+
     private static final String DEVICE_SERIALIZATION_VERSION = "LUMOS_DEVICE_V1";
     private static final char DEVICE_FIELD_SEPARATOR = '|';
     private static final int DEVICE_FIELD_COUNT = 7;
@@ -30,6 +32,7 @@ public class LumosImpl implements Lumos {
     private final List<Device> devices = new CopyOnWriteArrayList<>();
     private final GestureStateManager gestureStateManager = new GestureStateManager();
     private final MediaPipeArmVectorEngine armVectorEngine = new MediaPipeArmVectorEngine();
+    private final MediaPipeCameraController cameraController = new MediaPipeCameraController(this);
 
     private Consumer<Image> uiUpdater;
     private Consumer<Result> resultChannel;
@@ -82,8 +85,9 @@ public class LumosImpl implements Lumos {
                     || Double.isInfinite(x) || Double.isInfinite(y) || Double.isInfinite(z)) {
                 throw new InvalidInputErr("Device coordinates must be finite numbers");
             }
-            if (deviceName.trim().isEmpty()) {
-                throw new InvalidInputErr("deviceName must not be null/blank");
+
+            if (deviceType.trim().isEmpty()) {
+                throw new InvalidInputErr("deviceType must not be null/blank");
             }
             String id = String.format("DEV_%02d", sequence);
             Device d = new Device(id, deviceName, deviceType,
@@ -142,9 +146,6 @@ public class LumosImpl implements Lumos {
     @NonNull
     public synchronized Device[] deserializeDevices(@NonNull String[] serializedDevices) {
         ensureInitialized("deserializeDevices");
-        if (serializedDevices == null) {
-            throw new InvalidInputErr("serializedDevices must not be null");
-        }
 
         List<Device> parsedDevices = new ArrayList<>();
         int nextSequence = sequence;
@@ -201,22 +202,59 @@ public class LumosImpl implements Lumos {
         initialized = true;
     }
 
+    /** assets 기본 경로의 MediaPipe 모델 2개로 실사용 초기화 */
+    public void initialize(@NonNull Context context) {
+        initialize(context, DEFAULT_POSE_MODEL_ASSET_PATH, DEFAULT_GESTURE_MODEL_ASSET_PATH);
+    }
+
+    /** 팔 방향만 사용하는 기존 호환 초기화 */
+    public void initialize(@NonNull Context context, @NonNull String poseModelAssetPath) {
+        initialize(context, poseModelAssetPath, null);
+    }
+
     /** 실사용 초기화 */
-    public void initialize(@NonNull Context context, @NonNull String modelAssetPath) {
+    public void initialize(@NonNull Context context,
+                           @NonNull String poseModelAssetPath,
+                           @Nullable String gestureModelAssetPath) {
         armVectorEngine.setVectorResultListener(this::onArmVectorReady);
-        armVectorEngine.initialize(context.getApplicationContext(), modelAssetPath);
+        armVectorEngine.setGestureResultListener(this::onGestureReady);
+        armVectorEngine.initialize(context.getApplicationContext(), poseModelAssetPath, gestureModelAssetPath);
         initialized = true;
         LumosLog.d(TAG, "MediaPipe initialized");
     }
 
     public void startIoTControlProcess() {
         ensureInitialized("startIoTControlProcess");
-        // host-driven: ingestExternalCameraFrame() 호출로 실제 처리 시작
+        // host-driven: ingestExternalCameraFrame() 또는 startCameraControlProcess() 호출로 실제 처리 시작
+    }
+
+    public void startCameraControlProcess(@NonNull Context context, @NonNull LifecycleOwner lifecycleOwner) {
+        startCameraControlProcess(context, lifecycleOwner, CameraSelector.LENS_FACING_BACK);
+    }
+
+    public void startCameraControlProcess(@NonNull Context context,
+                                          @NonNull LifecycleOwner lifecycleOwner,
+                                          int lensFacing) {
+        ensureInitialized("startCameraControlProcess");
+        cameraController.start(context, lifecycleOwner, lensFacing);
+    }
+
+    public void stopCameraControlProcess() {
+        cameraController.stop();
+    }
+
+    public boolean isCameraControlProcessRunning() {
+        return cameraController.isRunning();
     }
 
     public void ingestExternalCameraFrame(@NonNull MPImage mpImage, long timestampMs) {
+        ingestExternalCameraFrame(mpImage, timestampMs, 0);
+    }
+
+    public void ingestExternalCameraFrame(@NonNull MPImage mpImage, long timestampMs, int rotationDegrees) {
         ensureInitialized("ingestExternalCameraFrame");
-        armVectorEngine.processFrame(mpImage, timestampMs);
+        if (mpImage == null) throw new InvalidInputErr("mpImage must not be null");
+        armVectorEngine.processFrame(mpImage, timestampMs, rotationDegrees);
     }
 
     public void updateGesture(@NonNull GestureStateManager.Gesture gesture, float wristY) {
@@ -229,6 +267,10 @@ public class LumosImpl implements Lumos {
         if (!initialized) {
             throw new NotInitializedErr(apiName + " requires initialize() before use");
         }
+    }
+
+    private void onGestureReady(@NonNull GestureStateManager.Gesture gesture, float wristY, long ts) {
+        gestureStateManager.update(gesture, wristY);
     }
 
     private void onArmVectorReady(@NonNull Vector3f armVector, @Nullable PoseLandmarkerResult raw, long ts) {
@@ -348,6 +390,7 @@ public class LumosImpl implements Lumos {
     public Result getLatestResultSnapshot() { return latestResult.clone(); }
 
     public void shutdown() {
+        cameraController.stop();
         armVectorEngine.close();
         initialized = false;
     }

@@ -27,6 +27,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.adulescentia.LUMOS_lib.Lumos
+import io.github.adulescentia.LUMOS_lib.LumosImpl
+import io.github.adulescentia.LUMOS_lib.NotInitializedErr
 import io.github.adulescentia.lumosapp.ui.theme.LUMOS_libTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,6 +36,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.eclipse.paho.client.mqttv3.MqttClient
+import kotlin.text.isEmpty
 
 class LUMOS : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,7 +48,12 @@ class LUMOS : ComponentActivity() {
                 LUMOS_libApp()
             }
         }
+        LumosExtended.loadAll()
+    }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        LumosExtended.saveAll()
     }
 }
 
@@ -67,8 +75,14 @@ object LumosExtended : Lumos by Lumos.getInstance() {
             println("MQTT 연결 성공 : $mqttAccount")
         }
     }
+    lateinit var mqttPublisher: MqttPublisher
+    fun initializeMqttPublisher(context : Context) {
+        if(_mqttAccount.value == null) throw NotInitializedErr("mqtt account is not set")
+        mqttPublisher = MqttPublisher(_mqttAccount.value!!,context)
+    }
+
     @Serializable
-    data class MqttAccount(val pw : String, val name: String)
+    data class MqttAccount(val uri : String,val port : String,val pw : String, val name: String)
     fun getOrCreateClientId(context : Context): String {
         val sharedPref = context.getSharedPreferences("IoT_Prefs", Context.MODE_PRIVATE)
         var clientId = sharedPref.getString("mqtt_client_id", null)
@@ -96,7 +110,15 @@ object LumosExtended : Lumos by Lumos.getInstance() {
         }
     }
     fun loadAll(){
-        val deviceListStr = sharedPref?.getString("device_list","") ?: ""
+        loadAccount()
+        loadDeviceList()
+    }
+    fun loadAccount(){
+        val k = sharedPref?.getString("mqtt_acc","").takeIf { it?.isEmpty() == false } ?: return
+        _mqttAccount.value = Json.decodeFromString<MqttAccount>(k)
+    }
+    fun loadDeviceList() {
+        val deviceListStr = sharedPref?.getString("device_list","").takeIf { it?.isEmpty() == false } ?: return
         val deviceListStrArr = Json.decodeFromString<Array<String>>(deviceListStr)
         val deviceList = deserializeDevices(deviceListStrArr)
     }

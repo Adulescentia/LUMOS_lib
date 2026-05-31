@@ -26,13 +26,13 @@ import java.util.concurrent.Executors;
 class MediaPipeCameraController {
     private static final String TAG = "MediaPipeCameraController";
 
-    private final Lumos lumos;
+    private final LumosImpl lumos;
     private ExecutorService cameraExecutor;
     private ProcessCameraProvider cameraProvider;
     private int lensFacing = CameraSelector.LENS_FACING_BACK;
     private boolean running = false;
 
-    MediaPipeCameraController(@NonNull Lumos lumos) {
+    MediaPipeCameraController(@NonNull LumosImpl lumos) {
         this.lumos = lumos;
     }
 

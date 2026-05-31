@@ -7,8 +7,8 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttMessage
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 
-class MqttPublisher(serverUri: String,context : Context) {
-    private var client: MqttClient = MqttClient(serverUri, LumosExtended.getOrCreateClientId(context), MemoryPersistence())
+class MqttPublisher(val mqttAccount: LumosExtended.MqttAccount,context : Context) {
+    private var client: MqttClient = MqttClient("tcp://${mqttAccount.uri}:${mqttAccount.port}", LumosExtended.getOrCreateClientId(context), MemoryPersistence())
     private val callbacks = mutableMapOf<String,(MqttMessage?) -> Unit>()
     fun connect() {
         val options = MqttConnectOptions().apply {
@@ -16,17 +16,18 @@ class MqttPublisher(serverUri: String,context : Context) {
             connectionTimeout = 10
             keepAliveInterval = 60
             // 필요한 경우 ID/PW 설정
-             userName = "yoonseo"
-             password = "2134".toCharArray()
+             userName = mqttAccount.name
+             password = mqttAccount.pw.toCharArray()
         }
         client.connect(options)
+        setMqttCallback()
     }
     // 2. 특정 토픽 구독(Subscribe) 함수
     fun subscribe(topic: String, qos: Int = 1, callback: (MqttMessage?) -> Unit) {
         if (client.isConnected) {
             client.subscribe(topic, qos)
             println("구독 성공: $topic")
-
+            callbacks[topic] = callback
         } else {
             println("구독 실패: 브로커와 연결되어 있지 않습니다.")
         }
