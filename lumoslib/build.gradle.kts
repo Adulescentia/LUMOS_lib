@@ -34,11 +34,11 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 
-    implementation("com.google.mediapipe:tasks-vision:_")
-    implementation("org.ejml:ejml-all:_")
-    implementation(AndroidX.appCompat)
-    implementation(Google.android.material)
-    implementation("org.joml:joml:_")
+    implementation("com.google.mediapipe:tasks-vision:0.10.0")
+    implementation("org.ejml:ejml-all:0.43")
+    implementation("androidx.appcompat:appcompat:1.7.1")
+    implementation("com.google.android.material:material:1.13.0")
+    implementation("org.joml:joml:1.10.5")
 
     implementation("androidx.camera:camera-core:1.4.2")
     implementation("androidx.camera:camera-camera2:1.4.2")
