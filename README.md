@@ -277,3 +277,79 @@ lumos.shutdown();
 ## 11) 라이선스/주의
 
 이 저장소의 실제 라이선스 파일/정책을 반드시 확인 후 사용하세요.
+
+---
+
+## 12) CameraX + MediaPipe 실사용 모드
+
+이 버전부터 라이브러리 내부에서 CameraX 프레임을 받아 MediaPipe Pose Landmarker와 Gesture Recognizer를 동시에 실행할 수 있습니다. 호스트 앱은 런타임 카메라 권한을 승인한 뒤 `LifecycleOwner`만 넘기면 됩니다.
+
+```java
+Lumos lumos = Lumos.getInstance();
+
+// app/src/main/assets 아래의 기본 모델명을 사용합니다.
+// - pose_landmarker_full.task
+// - gesture_recognizer.task
+lumos.initialize(context);
+
+lumos.registerExternalResultChannel(result -> {
+    // result.getDirection(): MediaPipe Pose 기반 팔 방향 벡터
+    // result.getCommandType(): MediaPipe Gesture 기반 제어 명령
+});
+
+// Activity 또는 Fragment가 LifecycleOwner입니다.
+lumos.startCameraControlProcess(context, lifecycleOwner);
+
+// 필요 시 중지
+lumos.stopCameraControlProcess();
+```
+
+전면 카메라를 쓰고 싶으면 CameraX의 lens facing 값을 넘깁니다.
+
+```java
+lumos.startCameraControlProcess(
+        context,
+        lifecycleOwner,
+        androidx.camera.core.CameraSelector.LENS_FACING_FRONT
+);
+```
+
+기존처럼 호스트 앱이 직접 `MPImage`를 넣는 방식도 유지됩니다.
+
+```java
+lumos.ingestExternalCameraFrame(mpImage, timestampMs, rotationDegrees);
+```
+
+## 13) assets 폴더에 넣어야 하는 MediaPipe 모델
+
+Android 앱/라이브러리의 모델 위치는 다음 경로입니다.
+
+```text
+app/src/main/assets/
+├── pose_landmarker_full.task
+└── gesture_recognizer.task
+```
+
+다운로드 위치:
+
+- Pose Landmarker Full: https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task
+- Gesture Recognizer: https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task
+
+터미널 예시:
+
+```bash
+mkdir -p app/src/main/assets
+curl -L -o app/src/main/assets/pose_landmarker_full.task \
+  https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task
+curl -L -o app/src/main/assets/gesture_recognizer.task \
+  https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task
+```
+
+기본 제스처 매핑은 MediaPipe Gesture Recognizer의 기본 카테고리를 LUMOS 명령으로 변환합니다.
+
+| MediaPipe gesture | LUMOS gesture | 동작 |
+| --- | --- | --- |
+| `Pointing_Up` | `ONE_FINGER` | 디바이스 선택/해제 |
+| `Closed_Fist` | `FIST` | 다음 팜 전환 동작 준비 |
+| `Open_Palm` | `PALM` | 직전 FIST 후 전원 토글 |
+| `Victory` | `V_SIGN` | 선택된 디바이스의 모드 조절 시작/종료 |
