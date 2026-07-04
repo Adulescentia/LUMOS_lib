@@ -62,5 +62,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.security.crypto)
     implementation(libs.joml)
+    implementation(libs.androidx.camera.view.v161)
+    implementation(libs.androidx.camera.camera2.v161)
+    implementation(libs.androidx.camera.lifecycle.v161)
     implementation(project(":app"))
 }

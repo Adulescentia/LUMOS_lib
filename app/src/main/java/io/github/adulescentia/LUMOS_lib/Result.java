@@ -1,6 +1,7 @@
 package io.github.adulescentia.LUMOS_lib;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.joml.Vector3f;
 
@@ -57,12 +58,9 @@ public class Result implements Cloneable {
         return new Vector3f(direction);
     }
 
-    @NonNull
+    @Nullable
     public Device getSelectedDevice() {
-        if (selectedDevice != null) {
-            return selectedDevice;
-        }
-        throw new IllegalStateException("No selected device in current Result");
+        return selectedDevice;
     }
 
     @NonNull

@@ -33,7 +33,6 @@ android {
 dependencies {
     //basic
     implementation(libs.appcompat)
-    implementation(libs.generativeai)
     implementation(libs.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
@@ -41,14 +40,14 @@ dependencies {
 
     //additional
 
-    implementation("com.google.mediapipe:tasks-vision:0.10.35")
-    implementation("org.joml:joml:1.10.8")
+    implementation(libs.tasks.vision.v01035)
+    implementation(libs.joml.v1108)
 
-    implementation("androidx.lifecycle:lifecycle-runtime:2.10.0")
-    implementation("androidx.camera:camera-core:1.4.2")
-    implementation("androidx.camera:camera-camera2:1.4.2")
-    implementation("androidx.camera:camera-lifecycle:1.4.2")
-    implementation("androidx.camera:camera-view:1.4.2")
-    implementation("com.google.guava:guava:33.2.1-android")
+    implementation(libs.androidx.lifecycle.runtime)
+    implementation(libs.androidx.camera.core.v142)
+    implementation(libs.androidx.camera.camera2.v142)
+    implementation(libs.androidx.camera.lifecycle.v142)
+    implementation(libs.androidx.camera.view.v142)
+    implementation(libs.guava.v3321android)
 
 }

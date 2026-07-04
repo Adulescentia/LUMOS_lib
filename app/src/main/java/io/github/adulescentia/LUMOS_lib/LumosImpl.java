@@ -1,12 +1,14 @@
 package io.github.adulescentia.LUMOS_lib;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.media.Image;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageProxy;
 import androidx.lifecycle.LifecycleOwner;
-
+import com.google.mediapipe.framework.image.BitmapImageBuilder;
 import com.google.mediapipe.framework.image.MPImage;
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
 
@@ -19,7 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 /** 실사용 라이브러리 형태의 LUMOS 코어 */
-public class LumosImpl implements Lumos {
+public class LumosImpl implements LumosInterface {
     private static final String TAG = "Lumos";
     private static volatile LumosImpl instance;
     public static final String DEFAULT_POSE_MODEL_ASSET_PATH = "pose_landmarker_full.task";
@@ -229,7 +231,7 @@ public class LumosImpl implements Lumos {
     }
 
     public void startCameraControlProcess(@NonNull Context context, @NonNull LifecycleOwner lifecycleOwner) {
-        startCameraControlProcess(context, lifecycleOwner, CameraSelector.LENS_FACING_BACK);
+        startCameraControlProcess(context, lifecycleOwner, CameraSelector.LENS_FACING_FRONT);
     }
 
     public void startCameraControlProcess(@NonNull Context context,
@@ -245,6 +247,20 @@ public class LumosImpl implements Lumos {
 
     public boolean isCameraControlProcessRunning() {
         return cameraController.isRunning();
+    }
+
+    public void ingestExternalCameraFrame(@NonNull ImageProxy img){
+        Bitmap bitmap = img.toBitmap();
+        MPImage mpImage = new BitmapImageBuilder(bitmap).build();
+        // 5. 프레임의 회전값 추출 (스마트폰이 돌아가 있을 때 보정용)
+        int rotationDegrees = img.getImageInfo().getRotationDegrees();
+
+        // 6. 🚀 대망의 엔진 주입! (타임스탬프는 밀리초 단위로 전달)
+        ingestExternalCameraFrame(
+                mpImage,
+                System.currentTimeMillis(),
+                rotationDegrees
+        );
     }
 
     public void ingestExternalCameraFrame(@NonNull MPImage mpImage, long timestampMs) {
