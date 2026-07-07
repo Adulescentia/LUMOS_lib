@@ -47,13 +47,13 @@ public class GestureStateManagerTest {
         manager.update(GestureStateManager.Gesture.ONE_FINGER, 0f);
         assertEquals(1, listener.selectionToggleCount);
         assertTrue(listener.latestSelectionState);
-        assertTrue(manager.isDeviceSelected());
+        assertTrue(manager.isDeviceSelected);
 
         manager.update(GestureStateManager.Gesture.FIST, 0f);
         manager.update(GestureStateManager.Gesture.ONE_FINGER, 0f);
         assertEquals(2, listener.selectionToggleCount);
         assertFalse(listener.latestSelectionState);
-        assertFalse(manager.isDeviceSelected());
+        assertFalse(manager.isDeviceSelected);
     }
 
     @Test
@@ -80,17 +80,17 @@ public class GestureStateManagerTest {
 
         manager.update(GestureStateManager.Gesture.FIST, 0.5f);
         manager.update(GestureStateManager.Gesture.ONE_FINGER, 0.5f);
-        assertTrue(manager.isDeviceSelected());
+        assertTrue(manager.isDeviceSelected);
 
         manager.update(GestureStateManager.Gesture.FIST, 0.5f);
         manager.update(GestureStateManager.Gesture.V_SIGN, 0.5f);
-        assertTrue(manager.isTrackingModeActive());
+        assertTrue(manager.isTrackingModeActive);
 
         manager.update(GestureStateManager.Gesture.UNDEF, 0.3f);
 
         manager.update(GestureStateManager.Gesture.FIST, 0.3f);
         manager.update(GestureStateManager.Gesture.V_SIGN, 0.3f);
-        assertFalse(manager.isTrackingModeActive());
+        assertFalse(manager.isTrackingModeActive);
         assertEquals(1, listener.modeAppliedCount);
         assertEquals(0.4f, listener.latestModeValue, 0.0001f);
     }

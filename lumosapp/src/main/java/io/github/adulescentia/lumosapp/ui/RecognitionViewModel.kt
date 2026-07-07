@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import io.github.adulescentia.LUMOS_lib.GestureStateManager
 import io.github.adulescentia.lumosapp.LumosExtended
 
 class RecognitionViewModel : ViewModel() {
@@ -30,6 +31,7 @@ class RecognitionViewModel : ViewModel() {
     // UI에서 관찰할 상태 (초기값은 null)
     private val _lumosResult = MutableStateFlow<Result?>(null)
     val lumosResult: StateFlow<Result?> = _lumosResult.asStateFlow()
+
 
     fun initAndStart(context: Context, lifecycleOwner: LifecycleOwner) {
         // 1. 초기화

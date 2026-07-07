@@ -20,6 +20,8 @@ import java.util.function.Consumer;
  */
 public interface LumosInterface {
 
+    public GestureStateManager gestureStateManager = new GestureStateManager();
+
     // ========================================================================
     // 디바이스 관리 (Device Management)
     // ========================================================================

@@ -32,7 +32,6 @@ public class LumosImpl implements LumosInterface {
     private static final int DEVICE_FIELD_COUNT = 7;
 
     private final List<Device> devices = new CopyOnWriteArrayList<>();
-    private final GestureStateManager gestureStateManager = new GestureStateManager();
     private final MediaPipeArmVectorEngine armVectorEngine = new MediaPipeArmVectorEngine();
     private final MediaPipeCameraController cameraController = new MediaPipeCameraController(this);
 

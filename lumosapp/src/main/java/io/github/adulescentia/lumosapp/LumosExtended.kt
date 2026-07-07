@@ -3,6 +3,7 @@ package io.github.adulescentia.lumosapp
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import io.github.adulescentia.LUMOS_lib.GestureStateManager
 import io.github.adulescentia.LUMOS_lib.LumosImpl
 import io.github.adulescentia.LUMOS_lib.LumosInterface
 import io.github.adulescentia.LUMOS_lib.NotInitializedErr
@@ -27,6 +28,7 @@ object LumosExtended : LumosInterface by LumosImpl.getInstance() {
         if (mqttAccount != null) {
             // 🚀 실제 MQTT 연결 로직 실행 (백엔드 서비스에서도 이 함수를 호출!)
             println("MQTT 연결 성공 : $mqttAccount")
+
         }
     }
     lateinit var mqttPublisher: MqttPublisher

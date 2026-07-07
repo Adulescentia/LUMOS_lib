@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.adulescentia.LUMOS_lib.Device
+import io.github.adulescentia.lumosapp.LumosExtended
 
 @Composable
 fun RecognitionScreen(viewModel: RecognitionViewModel = viewModel()) {
@@ -64,11 +65,13 @@ fun RecognitionScreen(viewModel: RecognitionViewModel = viewModel()) {
                     color = Color.Green
                 )
 
-                Text(
-                        text = "명령: ${resultState!!.direction}",
-                fontSize = 14.sp,
-                color = Color.Green
-                )
+//                Text(
+//                        text = "제스쳐: ${}",
+//                fontSize = 14.sp,
+//                color = Color.Green
+//                )
+
+
             } else {
                 Text("엔진 초기화 중...", color = Color.White)
             }
