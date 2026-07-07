@@ -7,6 +7,7 @@ import io.github.adulescentia.LUMOS_lib.GestureStateManager
 import io.github.adulescentia.LUMOS_lib.LumosImpl
 import io.github.adulescentia.LUMOS_lib.LumosInterface
 import io.github.adulescentia.LUMOS_lib.NotInitializedErr
+import io.github.adulescentia.LUMOS_lib.Result
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,6 +19,21 @@ object LumosExtended : LumosInterface by LumosImpl.getInstance() {
 
     private var sharedPref: SharedPreferences? = null
 
+    override fun initialize(
+        context: Context,
+        poseModelAssetPath: String,
+        gestureModelAssetPath: String?
+    ) {
+        //TODO HANDLER
+        LumosImpl.getInstance().initialize(context, poseModelAssetPath, gestureModelAssetPath)
+        LumosExtended.registerExternalResultChannel { result ->
+            val device = result.selectedDevice ?: return@registerExternalResultChannel
+            when(result.commandType) {
+                Result.CommandType.DEVICE_SELECTION_TOGGLED -> mqttPublisher.publish(device.id+"state","flip")
+                else -> {}
+            }
+        }
+    }
 
     // 1. 상태 관찰용 Flow (비밀번호나 기기 목록을 외부에서 실시간 구독 가능)
     var mqttAccount: MqttAccount? = null
@@ -28,7 +44,6 @@ object LumosExtended : LumosInterface by LumosImpl.getInstance() {
         if (mqttAccount != null) {
             // 🚀 실제 MQTT 연결 로직 실행 (백엔드 서비스에서도 이 함수를 호출!)
             println("MQTT 연결 성공 : $mqttAccount")
-
         }
     }
     lateinit var mqttPublisher: MqttPublisher

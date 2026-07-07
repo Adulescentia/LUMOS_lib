@@ -64,14 +64,6 @@ fun RecognitionScreen(viewModel: RecognitionViewModel = viewModel()) {
                     fontSize = 14.sp,
                     color = Color.Green
                 )
-
-//                Text(
-//                        text = "제스쳐: ${}",
-//                fontSize = 14.sp,
-//                color = Color.Green
-//                )
-
-
             } else {
                 Text("엔진 초기화 중...", color = Color.White)
             }

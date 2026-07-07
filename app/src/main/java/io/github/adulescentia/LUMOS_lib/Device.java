@@ -9,12 +9,15 @@ import org.joml.Vector3f;
 public class Device {
     private final String id;
     private final String name;
+
+    private final String topic;
     private final String type;
     private final Vector3f position;
 
     // Detector 연동용 상대 방향 캐시
     private Vector3f relativeCoordinate = new Vector3f(0, 0, 0);
 
+    static int currentId = 0;
 
     // 기존 테스트/코드 호환용 생성자
     public Device(String name, Vector3f position) {

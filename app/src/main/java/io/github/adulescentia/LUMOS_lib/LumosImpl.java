@@ -36,7 +36,7 @@ public class LumosImpl implements LumosInterface {
     private final MediaPipeCameraController cameraController = new MediaPipeCameraController(this);
 
     private Consumer<Image> uiUpdater;
-    private Consumer<Result> resultChannel;
+    private ArrayList<Consumer<Result>> resultChannels;
 
     private final Vector3f currentPosition = new Vector3f(0, 0, 0);
     private final Vector3f cameraPos = new Vector3f(0, 0, 0);
@@ -194,7 +194,7 @@ public class LumosImpl implements LumosInterface {
 
     public void registerExternalResultChannel(Consumer<Result> resultConsumer) {
         if (resultConsumer == null) throw new InvalidInputErr("resultConsumer must not be null");
-        this.resultChannel = resultConsumer;
+        this.resultChannels.add(resultConsumer);
     }
 
     /** 하위호환 초기화 */
@@ -294,10 +294,9 @@ public class LumosImpl implements LumosInterface {
         Result.CommandType cmd = pendingCommandType;
         String cmdDetail = pendingCommandDetail;
         latestResult.update(armVector, currentPosition, cameraPos, selected, cmd, cmdDetail);
-        pendingCommandType = Result.CommandType.NONE;
+        pendingCommandType = Result.CommandType.NONE; // 시발 진짜 데이터트렉 존나어렵게 해놨네
         pendingCommandDetail = "";
-
-        if (resultChannel != null) resultChannel.accept(latestResult.clone());
+        if (!resultChannels.isEmpty()) resultChannels.forEach((it) -> {it.accept(latestResult.clone());});
         if (uiUpdater != null) uiUpdater.accept(null);
     }
 

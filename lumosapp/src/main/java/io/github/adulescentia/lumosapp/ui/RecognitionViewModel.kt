@@ -45,8 +45,6 @@ class RecognitionViewModel : ViewModel() {
 
         // 3. 콜백을 Flow로 연결
         LumosExtended.registerExternalResultChannel { result ->
-            // 백그라운드 스레드에서 넘어올 수 있으므로 value 속성에 바로 할당합니다.
-            // (StateFlow는 thread-safe 하게 상태를 업데이트합니다)
             _lumosResult.value = result
         }
 
