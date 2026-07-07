@@ -1,4 +1,4 @@
-package io.github.adulescentia.lumosapp
+package io.github.adulescentia.lumosapp.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

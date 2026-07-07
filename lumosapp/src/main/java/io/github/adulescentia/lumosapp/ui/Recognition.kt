@@ -1,4 +1,4 @@
-package io.github.adulescentia.lumosapp
+package io.github.adulescentia.lumosapp.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
@@ -7,10 +7,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.adulescentia.LUMOS_lib.Device
 
@@ -64,6 +62,12 @@ fun RecognitionScreen(viewModel: RecognitionViewModel = viewModel()) {
                     text = "벡터: ${resultState!!.direction}",
                     fontSize = 14.sp,
                     color = Color.Green
+                )
+
+                Text(
+                        text = "명령: ${resultState!!.direction}",
+                fontSize = 14.sp,
+                color = Color.Green
                 )
             } else {
                 Text("엔진 초기화 중...", color = Color.White)

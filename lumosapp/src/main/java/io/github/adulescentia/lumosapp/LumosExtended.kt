@@ -19,11 +19,11 @@ object LumosExtended : LumosInterface by LumosImpl.getInstance() {
 
 
     // 1. 상태 관찰용 Flow (비밀번호나 기기 목록을 외부에서 실시간 구독 가능)
-    private val _mqttAccount = MutableStateFlow<MqttAccount?>(null)
-    val mqttPassword: StateFlow<MqttAccount?> = _mqttAccount.asStateFlow()
+    var mqttAccount: MqttAccount? = null
+        private set
     // 2. 외부(백엔드, 뷰모델 등) 어디서나 호출 가능한 MQTT 통신 함수
     fun connectMqtt() {
-        val mqttAccount = _mqttAccount.value
+        val mqttAccount = mqttAccount
         if (mqttAccount != null) {
             // 🚀 실제 MQTT 연결 로직 실행 (백엔드 서비스에서도 이 함수를 호출!)
             println("MQTT 연결 성공 : $mqttAccount")
@@ -31,8 +31,8 @@ object LumosExtended : LumosInterface by LumosImpl.getInstance() {
     }
     lateinit var mqttPublisher: MqttPublisher
     fun initializeMqttPublisher(context : Context) {
-        if(_mqttAccount.value == null) throw NotInitializedErr("mqtt account is not set")
-        mqttPublisher = MqttPublisher(_mqttAccount.value!!,context)
+        if(mqttAccount == null) throw NotInitializedErr("mqtt account is not set")
+        mqttPublisher = MqttPublisher(mqttAccount!!,context)
     }
 
     @Serializable
@@ -56,7 +56,7 @@ object LumosExtended : LumosInterface by LumosImpl.getInstance() {
         }
 
 
-        _mqttAccount.value = acc // 비밀번호가 바뀌면 감지하고 있는 모든 곳에 전파
+        mqttAccount = acc // 비밀번호가 바뀌면 감지하고 있는 모든 곳에 전파
     }
     fun saveAll(){
         sharedPref?.edit {
@@ -69,7 +69,7 @@ object LumosExtended : LumosInterface by LumosImpl.getInstance() {
     }
     fun loadAccount(){
         val k = sharedPref?.getString("mqtt_acc","").takeIf { it?.isEmpty() == false } ?: return
-        _mqttAccount.value = Json.decodeFromString<MqttAccount>(k)
+        mqttAccount = Json.decodeFromString<MqttAccount>(k)
     }
     fun loadDeviceList() {
         val deviceListStr = sharedPref?.getString("device_list","").takeIf { it?.isEmpty() == false } ?: return

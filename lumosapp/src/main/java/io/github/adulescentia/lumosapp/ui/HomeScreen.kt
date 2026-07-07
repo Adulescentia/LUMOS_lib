@@ -1,4 +1,4 @@
-package io.github.adulescentia.lumosapp
+package io.github.adulescentia.lumosapp.ui
 
 import android.content.Context
 import androidx.compose.foundation.background
@@ -59,16 +59,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.adulescentia.lumosapp.LumosExtended
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 @Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Home() {
     // 1. 상태 관리
+
     var cloudUrl by rememberSaveable { mutableStateOf("") }
-    var port by rememberSaveable { mutableStateOf("") }
+    var port by rememberSaveable     { mutableStateOf("") }
     var username by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
 
@@ -155,7 +158,7 @@ fun Home() {
                 onClick = {
                     isLoading = true
                     scope.launch {
-                        delay(2000) //TODO NETWORK CHECK
+                        delay(2000.milliseconds) //TODO NETWORK CHECK
                         val mqttAcc = LumosExtended.MqttAccount(cloudUrl,port,password,username)
                         LumosExtended.saveMqttAccount(mqttAcc)
                         LumosExtended.initializeMqttPublisher(context)
@@ -181,7 +184,8 @@ fun Home() {
                         strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
                     )
                 } else {
-                    Text("계정 저장", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    if(LumosExtended.mqttAccount == null) Text("계정 저장", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    else Text("계정 덮어쓰가", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -189,7 +193,7 @@ fun Home() {
                 onClick = {
                     isLoading = true
                     scope.launch {
-                        delay(2000) //TODO NETWORK CHECK
+                        delay(2000.milliseconds) //TODO NETWORK CHECK
                         LumosExtended.initializeMqttPublisher(context)
                         LumosExtended.mqttPublisher.connect()
                         LumosExtended.mqttPublisher.publish("connected.check", "app")
@@ -219,32 +223,6 @@ fun Home() {
         }
     }
 }
-@Preview
-@Composable
-@Deprecated("of no use")
-fun a(){
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.3f)) // 뒤를 어둡게
-            .pointerInput(Unit) {}, // 클릭 방지
-        contentAlignment = Alignment.Center
-    ) {
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-        ) {
-            Column(
-                modifier = Modifier.padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                CircularProgressIndicator()
-                Spacer(Modifier.height(16.dp))
-                Text("서버에 접속 중...", style = MaterialTheme.typography.labelLarge)
-            }
-        }
-    }
-}
 
 // 공통 입력을 위한 컴포저블 함수 분리 (코드 깔끔하게)
 @Composable
@@ -267,9 +245,6 @@ fun CustomInputField(
         visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
         keyboardOptions = KeyboardOptions(
             keyboardType = if (isNumber) KeyboardType.Number else if (isPassword) KeyboardType.Password else KeyboardType.Text
-        ),
-//        colors = TextFieldDefaults.outlinedTextFieldColors(
-//            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-//        )
+        )
     )
 }

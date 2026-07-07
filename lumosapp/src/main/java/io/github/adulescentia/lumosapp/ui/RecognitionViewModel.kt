@@ -1,4 +1,4 @@
-package io.github.adulescentia.lumosapp
+package io.github.adulescentia.lumosapp.ui
 
 import android.content.Context
 import android.graphics.Color
@@ -21,7 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import com.google.common.util.concurrent.ListenableFuture
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import io.github.adulescentia.lumosapp.LumosExtended
 
 class RecognitionViewModel : ViewModel() {
 
@@ -64,7 +65,7 @@ class RecognitionViewModel : ViewModel() {
 fun CameraFrameAnalyzerScreen() {
     val lumos = LumosExtended
     val context = LocalContext.current
-    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     AndroidView(
         modifier = Modifier.fillMaxSize(),
@@ -128,13 +129,7 @@ fun CameraFrameAnalyzerScreen() {
                 }
             }
 
-
-            Log.i("previewwww","returning preview")
             return@AndroidView previewView // AndroidView가 렌더링할 최종 뷰 반환
         }
     )
-}
-fun listener(lifecycleOwner : LifecycleOwner,ctx : Context, cameraProviderFuture : ListenableFuture<ProcessCameraProvider>, previewView : PreviewView) {
-
-
 }
