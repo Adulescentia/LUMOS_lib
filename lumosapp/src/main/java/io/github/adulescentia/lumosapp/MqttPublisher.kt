@@ -1,5 +1,6 @@
 package io.github.adulescentia.lumosapp
 import android.content.Context
+import io.github.adulescentia.LUMOS_lib.Device
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.MqttCallback
 import org.eclipse.paho.client.mqttv3.MqttClient
@@ -10,6 +11,7 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 class MqttPublisher(val mqttAccount: LumosExtended.MqttAccount,context : Context) {
     private var client: MqttClient = MqttClient("tcp://${mqttAccount.uri}:${mqttAccount.port}", LumosExtended.getOrCreateClientId(context), MemoryPersistence())
     private val callbacks = mutableMapOf<String,(MqttMessage?) -> Unit>()
+
     fun connect() {
         val options = MqttConnectOptions().apply {
             isCleanSession = false
@@ -64,6 +66,10 @@ class MqttPublisher(val mqttAccount: LumosExtended.MqttAccount,context : Context
         } else {
             println("발행 실패: 브로커와 연결되어 있지 않습니다.")
         }
+    }
+
+    fun control(device: Device,payload: String){
+        publish(device.controlTopic,payload)
     }
 
     fun disconnect() {

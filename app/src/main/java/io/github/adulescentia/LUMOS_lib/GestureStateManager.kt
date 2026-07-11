@@ -1,8 +1,5 @@
 package io.github.adulescentia.LUMOS_lib
 
-import android.renderscript.Sampler
-import kotlinx.coroutines.flow.StateFlow
-
 class GestureStateManager {
     enum class Gesture {
         FIST,
@@ -22,7 +19,7 @@ class GestureStateManager {
     @JvmField
     val isDeviceSelected: Boolean = false
     @JvmField
-    val isTrackingModeActive: Boolean = false
+    var isTrackingModeActive: Boolean = false
     private var readyForAction = true
 
     private val baseWristY = 0.0f
@@ -67,7 +64,8 @@ class GestureStateManager {
                 actionListener!!.onDevicePowerToggled()
             }
             Gesture.V_SIGN -> {
-                actionListener!!.onDeviceModeApplied(2.0f)
+                if(isTrackingModeActive) applyDeviceMode(currentModeValue)
+                isTrackingModeActive = !isTrackingModeActive
             }
             else -> {}
         }
@@ -75,9 +73,9 @@ class GestureStateManager {
 
     private fun applyDeviceMode(finalModeValue: Float) {
         if (actionListener != null) {
-            actionListener!!.onDeviceModeApplied(finalModeValue)
+            actionListener!!.onDeviceModeApplied(finalModeValue+1)
         }
-        println("LUMOS Core Engine -> 디바이스에 적용 완료: $finalModeValue")
+        println("LUMOS Core Engine -> 디바이스에 적용 완료: ${finalModeValue+1}")
     }
 
     companion object {

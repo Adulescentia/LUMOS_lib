@@ -27,6 +27,7 @@ class LUMOS : ComponentActivity() {
                 this, arrayOf(Manifest.permission.CAMERA), 0)
         }
         LumosExtended.loadAll()
+        LumosExtended.tryConnectMqtt(this)
         enableEdgeToEdge()
         setContent {
             LUMOS_libTheme {

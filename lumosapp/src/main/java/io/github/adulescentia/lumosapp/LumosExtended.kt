@@ -3,17 +3,14 @@ package io.github.adulescentia.lumosapp
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import io.github.adulescentia.LUMOS_lib.GestureStateManager
 import io.github.adulescentia.LUMOS_lib.LumosImpl
 import io.github.adulescentia.LUMOS_lib.LumosInterface
 import io.github.adulescentia.LUMOS_lib.NotInitializedErr
 import io.github.adulescentia.LUMOS_lib.Result
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.eclipse.paho.client.mqttv3.MqttClient
+import java.io.EOFException
 
 object LumosExtended : LumosInterface by LumosImpl.getInstance() {
 
@@ -29,7 +26,8 @@ object LumosExtended : LumosInterface by LumosImpl.getInstance() {
         LumosExtended.registerExternalResultChannel { result ->
             val device = result.selectedDevice ?: return@registerExternalResultChannel
             when(result.commandType) {
-                Result.CommandType.DEVICE_SELECTION_TOGGLED -> mqttPublisher.publish(device.id+"state","flip")
+                Result.CommandType.DEVICE_POWER_TOGGLED -> mqttPublisher.control(device,"toggle")
+                Result.CommandType.DEVICE_MODE_APPLIED -> mqttPublisher.control(device,result.commandDetail)
                 else -> {}
             }
         }
@@ -39,12 +37,17 @@ object LumosExtended : LumosInterface by LumosImpl.getInstance() {
     var mqttAccount: MqttAccount? = null
         private set
     // 2. 외부(백엔드, 뷰모델 등) 어디서나 호출 가능한 MQTT 통신 함수
-    fun connectMqtt() {
+    fun tryConnectMqtt(context: Context) : Boolean{
         val mqttAccount = mqttAccount
         if (mqttAccount != null) {
-            // 🚀 실제 MQTT 연결 로직 실행 (백엔드 서비스에서도 이 함수를 호출!)
-            println("MQTT 연결 성공 : $mqttAccount")
+            initializeMqttPublisher(context)
+            try {
+                mqttPublisher.connect()
+                println("MQTT 연결 성공 : $mqttAccount")
+                return true
+            }catch (e : EOFException){ e.printStackTrace() }
         }
+        return false
     }
     lateinit var mqttPublisher: MqttPublisher
     fun initializeMqttPublisher(context : Context) {
@@ -92,5 +95,10 @@ object LumosExtended : LumosInterface by LumosImpl.getInstance() {
         val deviceListStr = sharedPref?.getString("device_list","").takeIf { it?.isEmpty() == false } ?: return
         val deviceListStrArr = Json.decodeFromString<Array<String>>(deviceListStr)
         val deviceList = deserializeDevices(deviceListStrArr)
+        deviceList.forEach {
+            registerDevice(
+                it.position.x.toDouble(),
+                it.position.y.toDouble(), it.position.z.toDouble(),it.name,it.type)
+        }
     }
 }

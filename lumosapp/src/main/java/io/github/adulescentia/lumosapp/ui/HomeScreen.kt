@@ -24,9 +24,7 @@ import androidx.compose.material.icons.filled.SettingsEthernet
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -47,9 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -161,10 +157,11 @@ fun Home() {
                         delay(2000.milliseconds) //TODO NETWORK CHECK
                         val mqttAcc = LumosExtended.MqttAccount(cloudUrl,port,password,username)
                         LumosExtended.saveMqttAccount(mqttAcc)
-                        LumosExtended.initializeMqttPublisher(context)
-                        LumosExtended.mqttPublisher.connect()
-                        LumosExtended.mqttPublisher.publish("connected.check", "app")
-                        LumosExtended.mqttPublisher.subscribe("testt") { println("subsub!!!!!!!!! : $it") }
+                        val scc = LumosExtended.tryConnectMqtt(context)
+                        if(scc){
+                            LumosExtended.mqttPublisher.publish("connected.check", "app")
+                            LumosExtended.mqttPublisher.subscribe("testt") { println("subsub!!!!!!!!! : $it") }
+                        }
                         isLoading = false
                     }
                 },

@@ -36,7 +36,7 @@ public class LumosImpl implements LumosInterface {
     private final MediaPipeCameraController cameraController = new MediaPipeCameraController(this);
 
     private Consumer<Image> uiUpdater;
-    private ArrayList<Consumer<Result>> resultChannels;
+    private ArrayList<Consumer<Result>> resultChannels = new ArrayList<Consumer<Result>>();
 
     private final Vector3f currentPosition = new Vector3f(0, 0, 0);
     private final Vector3f cameraPos = new Vector3f(0, 0, 0);
@@ -62,7 +62,7 @@ public class LumosImpl implements LumosInterface {
             @Override public void onDeviceModeApplied(float modeValue) {
                 LumosLog.d(TAG, "mode=" + modeValue);
                 pendingCommandType = Result.CommandType.DEVICE_MODE_APPLIED;
-                pendingCommandDetail = "mode=" + modeValue;
+                pendingCommandDetail = "M"+modeValue;
             }
         });
     }

@@ -2,12 +2,6 @@ package io.github.adulescentia.lumosapp.ui
 
 import android.content.Context
 import android.graphics.Color
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.ViewModel
-import io.github.adulescentia.LUMOS_lib.Result
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import android.util.Log
 import android.view.ViewGroup
 import androidx.camera.core.CameraSelector
@@ -21,9 +15,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import io.github.adulescentia.LUMOS_lib.GestureStateManager
+import io.github.adulescentia.LUMOS_lib.Result
 import io.github.adulescentia.lumosapp.LumosExtended
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class RecognitionViewModel : ViewModel() {
 
@@ -38,10 +37,6 @@ class RecognitionViewModel : ViewModel() {
 
 
         // 2. 테스트용 가상 기기 등록 (필요시)
-        if (LumosExtended.deviceList.isEmpty()) {
-            LumosExtended.registerDevice(1.0, 0.0, 5.0, "스마트 전등", "LIGHT")
-            LumosExtended.registerDevice(-2.0, 1.0, 4.0, "에어컨", "AC")
-        }
 
         // 3. 콜백을 Flow로 연결
         LumosExtended.registerExternalResultChannel { result ->
